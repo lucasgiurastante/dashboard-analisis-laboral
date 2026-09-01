@@ -86,6 +86,7 @@ a{color:#5eead4;text-decoration:none}a:hover{text-decoration:underline}
 #newJobsBanner button{background:rgba(255,255,255,.2);color:white;border:1px solid rgba(255,255,255,.4);padding:6px 14px;border-radius:999px;cursor:pointer;font-weight:700}
 #newJobsBanner button:hover{background:white;color:#14532d}
 @keyframes slideDown{from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
 .insight b{color:var(--text)}
 /* recommendations */
 .recs{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
@@ -128,7 +129,7 @@ a{color:#5eead4;text-decoration:none}a:hover{text-decoration:underline}
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
     <div class="badge"> <span style="width:8px;height:8px;background:var(--green);border-radius:50%;display:inline-block"></span> <strong id="heroRemotePct">93% Remote</strong> · <span id="dataSource">Datos embebidos</span></div>
     <button class="btn btn-ghost" id="btnRefresh" onclick="loadFromSheet(true)" style="padding:6px 12px;font-size:.8rem">↻ Sincronizar Sheets</button>
-    <span id="sheetStatus" style="font-size:.75rem;color:var(--muted)"></span>
+    <span id="sheetStatus" style="font-size:.85rem;color:var(--muted);display:inline-flex;align-items:center;gap:8px;transition:all .3s"></span>
   </div>
   </div>
 
@@ -146,6 +147,16 @@ a{color:#5eead4;text-decoration:none}a:hover{text-decoration:underline}
       </div>
     </div>
     <div id="sheetLoaderStatus" style="font-size:.82rem;color:var(--muted);margin-top:10px"></div>
+    <details style="margin-top:12px;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:10px">
+      <summary style="cursor:pointer;font-size:.82rem;color:var(--muted);font-weight:700">¿Sheets no carga? → Subí CSV manual</summary>
+      <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="file" id="csvFileInput" accept=".csv" style="font-size:.85rem;color:var(--muted)" />
+        <span style="font-size:.75rem;color:var(--muted)">o pegá CSV aquí:</span>
+        <textarea id="csvPaste" placeholder="job_id,fecha_scrapeo,titulo,empresa..." style="width:100%;height:80px;background:#020617;border:1px solid #334155;color:var(--text);border-radius:8px;padding:8px;font-size:.75rem"></textarea>
+        <button class="btn btn-ghost" onclick="loadFromManual()" style="padding:6px 12px;font-size:.8rem">Cargar CSV pegado</button>
+      </div>
+      <div style="font-size:.7rem;color:var(--muted);margin-top:6px">Exportá desde Sheets: Archivo → Descargar → Valores separados por comas (.csv) y subilo aquí. No necesitas publicar.</div>
+    </details>
   </div>
 
   <div id="newJobsBanner"><div class="left"><span style="font-size:1.4rem">🎉</span> <span id="newJobsText"><span class="count" id="newJobsCount">0</span> trabajos nuevos cargados!</span> <span style="font-weight:400;opacity:.9" id="newJobsSub"></span></div><div style="display:flex;gap:8px"><button onclick="scrollToNewJobs()">Ver nuevos →</button><button onclick="dismissNewJobsBanner()" style="background:transparent;border-color:rgba(255,255,255,.3)">✕</button></div></div>
@@ -261,6 +272,51 @@ function loadFromPastedLink(){
   status.style.color='var(--muted)';
   loadFromSheet(true);
 }
+function loadFromManual(){
+  const fileInput=document.getElementById('csvFileInput');
+  const paste=document.getElementById('csvPaste').value.trim();
+  const status=document.getElementById('sheetLoaderStatus');
+  const handleText=(text)=>{
+    try{
+      const rows=parseCSV(text);
+      let headerIdx=rows.findIndex(r=>r[0]==='job_id');
+      if(headerIdx===-1) headerIdx=0;
+      const dataRows=rows.slice(headerIdx+1);
+      const enriched=dataRows.map((r,i)=>enrichRow(r,i)).filter(Boolean);
+      const seen=new Set(); const dedup=[];
+      for(const j of enriched){ if(!seen.has(j.job_id)){ seen.add(j.job_id); dedup.push(j); } }
+      if(dedup.length===0) throw new Error('0 jobs válidos en CSV');
+      const seenBefore=getSeenIds();
+      const nuevos=dedup.filter(j=>!seenBefore.has(j.job_id));
+      JOBS.length=0; dedup.forEach(j=>JOBS.push(j));
+      filtered=[...JOBS]; currentPage=1;
+      clearAllFiltersSingle();
+      updateKpis(); buildSkillFilter(); renderCharts(); renderTop(); renderAll(); updateActiveChips();
+      const newSeen=new Set([...seenBefore, ...dedup.map(j=>j.job_id)]);
+      saveSeenIds(newSeen);
+      newJobIds=new Set(nuevos.map(j=>j.job_id));
+      const banner=document.getElementById('newJobsBanner');
+      if(nuevos.length>0){
+        document.getElementById('newJobsCount').textContent=nuevos.length;
+        document.getElementById('newJobsSub').textContent=` — Total ${JOBS.length}`;
+        banner.classList.add('show');
+        showToast(`🎉 ${nuevos.length} trabajos nuevos (manual)`);
+      }
+      status.innerHTML=`<span style="color:var(--green);font-weight:700">✓ ${dedup.length} jobs cargados manual (${nuevos.length} nuevos)</span>`;
+      document.getElementById('dataSource').textContent=`CSV manual (${JOBS.length})`;
+      document.getElementById('lastUpdate').textContent=new Date().toLocaleString('es-AR');
+    }catch(e){ status.innerHTML=`<span style="color:#f87171">✗ Error CSV: ${e.message}</span>`; }
+  };
+  if(fileInput.files && fileInput.files[0]){
+    const reader=new FileReader();
+    reader.onload=e=>handleText(e.target.result);
+    reader.readAsText(fileInput.files[0]);
+  } else if(paste){
+    handleText(paste);
+  } else {
+    status.innerHTML='<span style="color:var(--amber)">Elegí un archivo CSV o pegá contenido</span>';
+  }
+}
 function clearSheetLink(){
   localStorage.removeItem('custom_sheet_id');
   window.CUSTOM_SHEET_ID=null;
@@ -294,7 +350,7 @@ const SHEET_CSV_URLS = [
 let sheetLastSync = null;
 if(location.protocol==='file:'){
   console.warn('Dashboard abierto via file:// — fetch a Sheets puede fallar por CORS. Servir via http: python3 -m http.server 8000');
-  document.getElementById('sheetStatus').innerHTML+='<br><span style="color:var(--amber)">Abierto como file:// — usá http://localhost:8000/dashboard.html para sync</span>';
+  document.getElementById('sheetStatus').innerHTML+='<br><span style="color:var(--amber);font-size:.9rem;font-weight:600">⚠️ file:// bloquea Sheets — usá http://localhost:8000/</span>';
 }
 let usingSheet = false;
 
@@ -414,8 +470,13 @@ function scrollToNewJobs(){
 async function loadFromSheet(showToastOnSuccess){
   const statusEl=document.getElementById('sheetStatus');
   const btn=document.getElementById('btnRefresh');
-  statusEl.textContent='Sincronizando...';
-  if(btn) btn.disabled=true;
+  statusEl.innerHTML='<span style="display:inline-flex;align-items:center;gap:10px;font-size:1.1rem;font-weight:800;color:var(--pink)"><span style="width:18px;height:18px;border:3px solid var(--pink);border-top-color:transparent;border-radius:50%;display:inline-block;animation:spin 0.8s linear infinite"></span> Sincronizando con Google Sheets...</span><span style="font-size:.85rem;color:var(--muted)">Esto puede tardar 2-3 segundos</span>';
+  statusEl.style.background='rgba(244,114,182,.12)';
+  statusEl.style.border='1px solid rgba(244,114,182,.3)';
+  statusEl.style.padding='8px 14px';
+  statusEl.style.borderRadius='999px';
+  statusEl.style.fontSize='1rem';
+  if(btn){ btn.disabled=true; btn.innerHTML='⏳ Sincronizando...'; }
   const seenBefore=getSeenIds();
   const embeddedIds=new Set(JOBS.map(j=>j.job_id));
   for(const url of SHEET_CSV_URLS){
@@ -445,8 +506,12 @@ async function loadFromSheet(showToastOnSuccess){
       usingSheet=true;
       document.getElementById('dataSource').textContent=`Sheets en vivo (${JOBS.length})`;
       document.getElementById('lastUpdate').textContent=sheetLastSync.toLocaleString('es-AR');
-      statusEl.textContent=`✓ ${JOBS.length} jobs desde Sheets${repetidosCount?` (${repetidosCount} repetidos ignorados)`:''}`;
-      statusEl.style.color='var(--green)';
+      statusEl.innerHTML=`<span style="font-size:1rem;font-weight:800;color:var(--green)">✓ ${JOBS.length} jobs desde Sheets</span><span style="font-size:.85rem;color:var(--muted)">${repetidosCount?` (${repetidosCount} repetidos ignorados)`:''}</span>`;
+      statusEl.style.background='rgba(34,197,94,.12)';
+      statusEl.style.border='1px solid rgba(34,197,94,.3)';
+      statusEl.style.padding='8px 14px';
+      statusEl.style.borderRadius='999px';
+      if(btn) btn.innerHTML='✓ Sincronizado';
       // actualizar seen
       const newSeen=new Set([...seenBefore, ...currentIds]);
       saveSeenIds(newSeen);
@@ -463,6 +528,7 @@ async function loadFromSheet(showToastOnSuccess){
         banner.classList.remove('show');
         if(showToastOnSuccess) showToast(`Sincronizado: ${JOBS.length} ofertas (sin nuevos)`);
       }
+      setTimeout(()=>{ if(btn) btn.innerHTML='↻ Sincronizar Sheets'; }, 3000);
       if(btn) btn.disabled=false;
       return;
     }catch(e){
@@ -470,8 +536,12 @@ async function loadFromSheet(showToastOnSuccess){
       continue;
     }
   }
-  statusEl.innerHTML='✗ Sheets no accesible — <a href="https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit" target="_blank" style="color:var(--pink);text-decoration:underline">revisar permisos</a> — usando datos embebidos<br><span style="font-size:.7rem;color:var(--muted)">Necesita: Compartir → Cualquiera con el link (Lector) + Archivo → Compartir → Publicar en la web → CSV</span>';
-  statusEl.style.color='var(--amber)';
+  statusEl.innerHTML='<span style="font-size:1rem;font-weight:800;color:#f87171">✗ Sheets no accesible</span> — <a href="https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit" target="_blank" style="color:var(--pink);text-decoration:underline;font-weight:700">revisar permisos</a> — usando datos demo<br><span style="font-size:.8rem;color:var(--muted)">Ya está: Compartir → Cualquiera con link (Lector) ✓ pero falta: Archivo → Compartir → <b>Publicar en la web</b> → Hoja RAW_TRABAJOS → <b>Valores separados por comas (.csv)</b> → Publicar</span>';
+  statusEl.style.background='rgba(239,68,68,.1)';
+  statusEl.style.border='1px solid rgba(239,68,68,.3)';
+  statusEl.style.padding='10px 14px';
+  statusEl.style.borderRadius='12px';
+  if(btn) btn.innerHTML='↻ Reintentar';
   document.getElementById('dataSource').textContent=`Datos embebidos (${JOBS.length})`;
   if(btn) btn.disabled=false;
   if(showToastOnSuccess) showToast('No se pudo sincronizar — revisa permisos de Sheets');
