@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Analizador de Propuestas Laborales — Dashboard Genérico</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://unpkg.com/mammoth@1.6.0/mammoth.browser.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -159,6 +161,33 @@ a{color:#5eead4;text-decoration:none}a:hover{text-decoration:underline}
     </details>
   </div>
 
+
+  <div id="cvLoader" style="background:linear-gradient(135deg,#1e293b 0%,#312e81 100%);border:1px solid #6366f1;border-radius:16px;padding:20px;margin-bottom:18px">
+    <div style="display:flex;gap:16px;align-items:start;flex-wrap:wrap">
+      <div style="flex:1;min-width:300px">
+        <div style="font-size:.85rem;font-weight:800;letter-spacing:.08em;color:#a5b4fc">📄 CARGÁ TU CV PARA ANÁLISIS PERSONALIZADO</div>
+        <div style="font-size:.82rem;color:#cbd5e1;margin-top:4px">El dashboard calcula tu <b>score personalizado</b> comparando tu perfil con cada oferta. Sin CV, usa scoring genérico.</div>
+        <div id="cvProfile" style="margin-top:12px;display:none;background:rgba(255,255,255,.08);border:1px solid rgba(165,180,252,.3);border-radius:12px;padding:12px">
+          <div style="font-size:.78rem;font-weight:700;color:#a5b4fc">PERFIL DETECTADO</div>
+          <div id="cvSkills" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px"></div>
+          <div id="cvStats" style="font-size:.75rem;color:var(--muted);margin-top:8px"></div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+          <label class="btn" style="background:#6366f1;color:white;cursor:pointer;padding:9px 14px;border-radius:10px;font-weight:700;display:inline-flex;align-items:center;gap:6px">
+            📎 Elegir CV (PDF/DOCX/TXT) <input type="file" id="cvFile" accept=".pdf,.docx,.txt" style="display:none" onchange="handleCVFile(this)" />
+          </label>
+          <button class="btn btn-ghost" onclick="clearCV()" style="padding:9px 14px">Limpiar CV</button>
+          <span id="cvStatus" style="font-size:.8rem;color:var(--muted);align-self:center"></span>
+        </div>
+      </div>
+      <div style="flex:1;min-width:300px">
+        <label style="font-size:.7rem;font-weight:700;letter-spacing:.08em;color:var(--muted)">O PEGÁ EL TEXTO DE TU CV</label>
+        <textarea id="cvText" placeholder="Pega aquí tu CV en texto... Ej: Project Manager con 5 años, Marketing Digital, Leadership, Agile, English C1, Data Analyst..." style="width:100%;height:110px;margin-top:6px;background:#020617;border:1px solid #6366f1;color:var(--text);border-radius:10px;padding:10px;font-size:.82rem"></textarea>
+        <button class="btn" onclick="analyzeCVText()" style="margin-top:8px;width:100%;background:#6366f1;color:white">Analizar CV → Recalcular Scores</button>
+      </div>
+    </div>
+  </div>
+
   <div id="newJobsBanner"><div class="left"><span style="font-size:1.4rem">🎉</span> <span id="newJobsText"><span class="count" id="newJobsCount">0</span> trabajos nuevos cargados!</span> <span style="font-weight:400;opacity:.9" id="newJobsSub"></span></div><div style="display:flex;gap:8px"><button onclick="scrollToNewJobs()">Ver nuevos →</button><button onclick="dismissNewJobsBanner()" style="background:transparent;border-color:rgba(255,255,255,.3)">✕</button></div></div>
 
   <div class="hero">
@@ -242,7 +271,166 @@ a{color:#5eead4;text-decoration:none}a:hover{text-decoration:underline}
 <script>
 const JOBS = [{"job_id": "DEMO-001", "fecha_scrapeo": "2026-09-01", "titulo": "Project Manager - Remote LATAM", "empresa": "Demo Corp", "ubicacion": "Latin America", "modalidad": "Remote", "url": "https://example.com", "notas": "Ejemplo. 3+ años PM. English.", "skills": ["Project Manager", "Marketing", "Leadership"], "score": 95, "salary_ars": 2100000, "salary_formatted": "$2.100.000", "salary_currency": "ARS", "salary_display": "$2.100.000 ARS/mes", "salary_ars_equivalent": 2100000, "salary_usd_monthly": null, "salary_notes_usd": false}, {"job_id": "DEMO-002", "fecha_scrapeo": "2026-09-01", "titulo": "Scrum Master - Remote", "empresa": "Demo Agile", "ubicacion": "Argentina", "modalidad": "Remote", "url": "https://example.com", "notas": "Scrum Master. 2 años.", "skills": ["Scrum Master", "Agile/Scrum"], "score": 75, "salary_ars": 1300000, "salary_formatted": "$1.300.000", "salary_currency": "ARS", "salary_display": "$1.300.000 ARS/mes", "salary_ars_equivalent": 1300000, "salary_usd_monthly": null, "salary_notes_usd": false}, {"job_id": "DEMO-003", "fecha_scrapeo": "2026-09-01", "titulo": "Marketing Manager - USD 2000", "empresa": "Demo Marketing", "ubicacion": "Buenos Aires, Argentina", "modalidad": "Remote", "url": "https://example.com", "notas": "USD 2000/month. Marketing.", "skills": ["Marketing", "Leadership"], "score": 85, "salary_ars": 3250000, "salary_formatted": "USD 2.000", "salary_currency": "USD", "salary_display": "USD 2.000 /mes", "salary_ars_equivalent": 3250000, "salary_usd_monthly": 2000, "salary_notes_usd": false}];
 
+
+// --- CV Personalizado ---
+let userProfile=null; // {skills:Set, text, name}
+const PROFILE_KEY='analizador_perfil';
+const ALL_SKILLS=['Project Manager','Marketing','Leadership','Digital Marketing','Agile/Scrum','Scrum Master','English','Data Analyst','SEO/SEM','Analytics','SQL','Jira/Asana','Tableau/Power BI','Figma','Python','JavaScript','React','Node.js'];
+
+function extractSkillsFromText(txt){
+  const lower=txt.toLowerCase();
+  const found=new Set();
+  const map=[
+    ['Project Manager',/project manager|project management|gesti.n de proyectos/i],
+    ['Marketing',/marketing/i],
+    ['Leadership',/leadership|liderazgo|team lead|lider de equipo|jefe de proyecto/i],
+    ['Digital Marketing',/digital marketing|marketing digital/i],
+    ['Agile/Scrum',/agile|scrum/i],
+    ['Scrum Master',/scrum master/i],
+    ['English',/english|ingl.s|bilingual|c1|c2|advanced/i],
+    ['Data Analyst',/data analyst|analista de datos|power bi|tableau|bi /i],
+    ['SEO/SEM',/seo|sem|google ads/i],
+    ['Analytics',/analytics|anal.tica|ga4|google analytics/i],
+    ['SQL',/\bsql\b/i],
+    ['Jira/Asana',/jira|asana|trello|monday/i],
+    ['Tableau/Power BI',/tableau|power bi/i],
+    ['Figma',/figma/i],
+    ['Python',/python/i],
+    ['JavaScript',/javascript|js/i],
+    ['React',/react/i],
+    ['Node.js',/node/i],
+  ];
+  for(const [skill,rx] of map) if(rx.test(lower)) found.add(skill);
+  return found;
+}
+function renderProfile(){
+  const el=document.getElementById('cvProfile');
+  const skillsEl=document.getElementById('cvSkills');
+  const statsEl=document.getElementById('cvStats');
+  const statusEl=document.getElementById('cvStatus');
+  if(!userProfile){ el.style.display='none'; statusEl.textContent='Sin CV — scoring genérico'; return; }
+  el.style.display='block';
+  skillsEl.innerHTML=[...userProfile.skills].map(s=>`<span class="tag" style="background:#6366f1;color:white;border-color:#818cf8">${s}</span>`).join('') || '<span style="color:var(--muted);font-size:.8rem">No se detectaron skills — editá tu CV</span>';
+  statsEl.textContent=`${userProfile.skills.size} skills detectados · ${userProfile.text.length} caracteres · Score personalizado activo`;
+  statusEl.innerHTML='<span style="color:var(--green);font-weight:700">✓ CV cargado — scores recalculados</span>';
+  // update radar hero to show user name if available
+}
+function saveProfile(){
+  if(userProfile) localStorage.setItem(PROFILE_KEY, JSON.stringify({skills:[...userProfile.skills], text:userProfile.text.slice(0,5000)}));
+  else localStorage.removeItem(PROFILE_KEY);
+}
+function loadProfile(){
+  try{
+    const raw=localStorage.getItem(PROFILE_KEY);
+    if(raw){ const o=JSON.parse(raw); userProfile={skills:new Set(o.skills), text:o.text}; renderProfile(); return true; }
+  }catch{}
+  return false;
+}
+function clearCV(){
+  userProfile=null;
+  document.getElementById('cvText').value='';
+  document.getElementById('cvFile').value='';
+  document.getElementById('cvSkills').innerHTML='';
+  document.getElementById('cvProfile').style.display='none';
+  document.getElementById('cvStatus').textContent='CV limpiado — scoring genérico';
+  saveProfile();
+  // recalcular con scoring genérico
+  recomputeAllScores();
+}
+function analyzeCVText(){
+  const txt=document.getElementById('cvText').value.trim();
+  if(!txt){ showToast('Pegá tu CV primero'); return; }
+  const skills=extractSkillsFromText(txt);
+  userProfile={skills, text:txt};
+  saveProfile();
+  renderProfile();
+  recomputeAllScores();
+  showToast(`CV analizado: ${skills.size} skills detectados`);
+}
+async function handleCVFile(input){
+  const file=input.files[0];
+  if(!file) return;
+  const status=document.getElementById('cvStatus');
+  status.textContent='Leyendo '+file.name+'...';
+  try{
+    let text='';
+    if(file.name.endsWith('.pdf')){
+      if(window['pdfjsLib']) pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const buf=await file.arrayBuffer();
+      const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+      for(let i=1;i<=pdf.numPages;i++){ const page=await pdf.getPage(i); const c=await page.getTextContent(); text+=c.items.map(it=>it.str).join(' ')+'\n'; }
+    } else if(file.name.endsWith('.docx')){
+      const buf=await file.arrayBuffer();
+      const res=await mammoth.extractRawText({arrayBuffer:buf});
+      text=res.value;
+    } else {
+      text=await file.text();
+    }
+    document.getElementById('cvText').value=text.slice(0,8000);
+    const skills=extractSkillsFromText(text);
+    userProfile={skills, text};
+    saveProfile();
+    renderProfile();
+    recomputeAllScores();
+    showToast(`CV cargado: ${file.name} — ${skills.size} skills`);
+  }catch(e){
+    status.textContent='Error leyendo CV: '+e.message;
+    console.error(e);
+  }
+}
+function computeScorePersonalized(jobSkills, ubicacion, modalidad, titulo){
+  if(!userProfile || userProfile.skills.size===0){
+    // fallback genérico (Yanaina-like)
+    let sc=65;
+    if(jobSkills.includes('Project Manager')) sc+=15;
+    if(jobSkills.includes('Marketing')) sc+=12;
+    if(jobSkills.includes('Leadership')) sc+=8;
+    if(jobSkills.includes('Digital Marketing')) sc+=6;
+    if(jobSkills.includes('Agile/Scrum')) sc+=5;
+    if(jobSkills.includes('English')) sc+=4;
+    if(jobSkills.includes('Data Analyst')||jobSkills.includes('Analytics')) sc-=8;
+    if(jobSkills.includes('SEO/SEM')) sc-=5;
+    if(/senior|sr\b/.test(titulo.toLowerCase())) sc+=3;
+    if(modalidad==='Remote') sc+=2;
+    const loc=(ubicacion||'').toLowerCase();
+    if(loc.includes('argentina')||loc.includes('latam')||loc.includes('latin')) sc+=2;
+    return Math.max(60, Math.min(100, sc));
+  }
+  // personalizado: % de match
+  const userSkills=userProfile.skills;
+  const total=jobSkills.length||1;
+  const matched=jobSkills.filter(s=>userSkills.has(s)).length;
+  const missing=jobSkills.filter(s=>!userSkills.has(s));
+  let base=55 + (matched/total)*40; // 55-95
+  // bonus si tiene Leadership/PM y job lo pide
+  if(userSkills.has('Leadership') && jobSkills.includes('Leadership')) base+=3;
+  if(userSkills.has('English') && jobSkills.includes('English')) base+=2;
+  // penalizar gaps críticos solo si usuario no los tiene y job los pide
+  // (ya está en matched/total)
+  if(modalidad==='Remote') base+=1;
+  return Math.max(60, Math.min(100, Math.round(base)));
+}
+function recomputeAllScores(){
+  JOBS.forEach(j=>{
+    const old=j.score;
+    j.score=computeScorePersonalized(j.skills, j.ubicacion, j.modalidad, j.titulo);
+    // recalcular salario estimado si es ARS (USD se mantiene)
+    if(j.salary_currency==='ARS'){
+      j.salary_ars=estimateSalaryARS(j.score, j.titulo, j.skills);
+      j.salary_formatted=`$${j.salary_ars.toLocaleString('es-AR')}`;
+      j.salary_display=`$${j.salary_ars.toLocaleString('es-AR')} ARS/mes`;
+      j.salary_ars_equivalent=j.salary_ars;
+    }
+  });
+  // refrescar todo
+  filtered=[...JOBS];
+  updateKpis(); buildSkillFilter(); renderCharts(); renderTop(); renderAll(); updateActiveChips();
+  // actualizar radar con perfil usuario
+  // (radar ya usa sc counts, no perfil, pero podría mostrar user skills)
+}
+
 // --- Google Sheets dynamic config ---
+
 const SHEET_ID = '1QIb6Bx2ZTL8rHM3QrQnMebZDg7hGsQJe6vlmQHf9lTY';
 function extractSheetId(link){
   const m=link.match(/\/d\/([a-zA-Z0-9-_]+)/);
@@ -387,7 +575,7 @@ function detectSkills(titulo, notas){
   if(/manager|project manager|lead/.test(txt)) s.add('Leadership');
   return Array.from(s);
 }
-function computeScore(skills, ubicacion, modalidad, titulo){
+function computeScore_ORIG(skills, ubicacion, modalidad, titulo){
   let sc=65;
   if(skills.includes('Project Manager')) sc+=15;
   if(skills.includes('Marketing')) sc+=12;
@@ -430,7 +618,7 @@ function enrichRow(r, idx){
   if(!job_id || job_id==='job_id' || job_id.startsWith('file://')) return null;
   if(!titulo) return null;
   let skills=detectSkills(titulo, notas);
-  let score=computeScore(skills, ubicacion, modalidad, titulo);
+  let score=userProfile? computeScorePersonalized(skills, ubicacion, modalidad, titulo) : computeScore_ORIG(skills, ubicacion, modalidad, titulo);
   // salary: try USD explicit, else estimate
   const usd=parseUSD(notas);
   let salary_ars, salary_currency, salary_usd_monthly=null, salary_display, salary_formatted, salary_notes_usd=false;
@@ -923,6 +1111,9 @@ document.getElementById('q').addEventListener('input',()=>{
 
 // init
 updateKpis(); buildSkillFilter(); renderCharts(); renderTop(); renderAll(); updateActiveChips();
+// cargar perfil CV guardado
+loadProfile();
+if(userProfile) recomputeAllScores();
 // auto-restaurar link pegado + intentar Sheets
 restoreCustomSheet();
 if(!localStorage.getItem('custom_sheet_id')) loadFromSheet(false);
