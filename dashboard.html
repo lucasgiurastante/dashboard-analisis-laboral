@@ -213,7 +213,7 @@ a{color:#5eead4;text-decoration:none}a:hover{text-decoration:underline}
         <h4>SALARIO (ARS/mes)</h4>
         <div class="mini-row"><span>Promedio global</span><strong id="miniAvg">—</strong></div>
         <div class="mini-row"><span>Mediana</span><strong id="miniMed">—</strong></div>
-        <div class="mini-row"><span>Top (Paired)</span><strong style="color:#5eead4">$3,508,200</strong></div>
+        <div class="mini-row"><span>Top</span><strong id="miniTopSalary" style="color:#5eead4">—</strong></div>
       </div>
     </div>
   </div>
@@ -249,9 +249,9 @@ a{color:#5eead4;text-decoration:none}a:hover{text-decoration:underline}
   </div>
 
   <div class="recs">
-    <div class="rec urgent"><h4>🔴 URGENTE — Cerrar gap</h4><ul id="recUrgent"><li style="color:var(--muted)">Cargá tu CV y Sheet para ver tus gaps</li></ul><div id="recUrgentAction" style="margin-top:8px;font-size:.78rem;color:var(--muted)">—</div></div>
-    <div class="rec warn"><h4>🟡 IMPORTANTE — Potenciar</h4><ul id="recImportant"><li style="color:var(--muted)">Cargando...</li></ul><div id="recImportantAction" style="margin-top:8px;font-size:.78rem;color:var(--muted)">—</div></div>
-    <div class="rec good"><h4>🟢 FORTALEZAS — Apalancar</h4><ul id="recGood"><li style="color:var(--muted)">Cargando...</li></ul><div id="recGoodAction" style="margin-top:8px;font-size:.78rem;color:var(--muted)">—</div></div>
+    <div class="rec urgent"><h4>🔴 URGENTE — Cerrar gap</h4><ul id="recUrgent"><li style="color:var(--muted)">sin analisis</li></ul><div id="recUrgentAction" style="margin-top:8px;font-size:.78rem;color:var(--muted)">sin analisis</div></div>
+    <div class="rec warn"><h4>🟡 IMPORTANTE — Potenciar</h4><ul id="recImportant"><li style="color:var(--muted)">sin analisis</li></ul><div id="recImportantAction" style="margin-top:8px;font-size:.78rem;color:var(--muted)">sin analisis</div></div>
+    <div class="rec good"><h4>🟢 FORTALEZAS — Apalancar</h4><ul id="recGood"><li style="color:var(--muted)">sin analisis</li></ul><div id="recGoodAction" style="margin-top:8px;font-size:.78rem;color:var(--muted)">sin analisis</div></div>
   </div>
 
   <div class="table-wrap">
@@ -439,26 +439,60 @@ function computeScorePersonalized(jobSkills, ubicacion, modalidad, titulo){
 function updateDynamicInsights(){
   // si no hay datos, mostrar placeholder
   if(JOBS.length===0){
-    document.getElementById('insight-score').textContent='Sin datos — cargá tu Sheet con ofertas';
-    document.getElementById('insight-salary').textContent='Sin datos';
-    document.getElementById('insight-skills').textContent='Sin datos';
-    document.getElementById('insight-company').textContent='Sin datos';
-    document.getElementById('insight-modality').textContent='Sin datos';
-    document.getElementById('insight-location').textContent='Sin datos';
-    document.getElementById('insight-radar').textContent='Sin datos';
-    document.getElementById('insight-gap').textContent='Sin datos';
-    document.getElementById('recUrgent').innerHTML='<li style="color:var(--muted)">Sin datos — cargá tu Sheet y CV</li>';
-    document.getElementById('recUrgentAction').textContent='—';
-    document.getElementById('recImportant').innerHTML='<li style="color:var(--muted)">—</li>';
-    document.getElementById('recImportantAction').textContent='—';
-    document.getElementById('recGood').innerHTML='<li style="color:var(--muted)">—</li>';
-    document.getElementById('recGoodAction').textContent='—';
+    document.getElementById('insight-score').textContent='sin analisis — cargá un Sheet';
+    document.getElementById('insight-salary').textContent='sin analisis';
+    document.getElementById('insight-skills').textContent='sin analisis';
+    document.getElementById('insight-company').textContent='sin analisis';
+    document.getElementById('insight-modality').textContent='sin analisis';
+    document.getElementById('insight-location').textContent='sin analisis';
+    document.getElementById('insight-radar').textContent='sin analisis';
+    document.getElementById('insight-gap').textContent='sin analisis';
+    document.getElementById('recUrgent').innerHTML='<li style="color:var(--muted)">sin analisis</li>';
+    document.getElementById('recUrgentAction').textContent='sin analisis';
+    document.getElementById('recImportant').innerHTML='<li style="color:var(--muted)">sin analisis</li>';
+    document.getElementById('recImportantAction').textContent='sin analisis';
+    document.getElementById('recGood').innerHTML='<li style="color:var(--muted)">sin analisis</li>';
+    document.getElementById('recGoodAction').textContent='sin analisis';
     return;
+  }
+  if(!userProfile || userProfile.skills.size===0){
+    document.getElementById('recUrgent').innerHTML='<li style="color:var(--muted)">sin analisis — cargá tu CV</li>';
+    document.getElementById('recUrgentAction').textContent='sin analisis';
+    document.getElementById('recImportant').innerHTML='<li style="color:var(--muted)">sin analisis — cargá tu CV</li>';
+    document.getElementById('recImportantAction').textContent='sin analisis';
+    document.getElementById('recGood').innerHTML='<li style="color:var(--muted)">sin analisis — cargá tu CV</li>';
+    document.getElementById('recGoodAction').textContent='sin analisis';
+    // insights sin CV también sin analisis
+    // pero si hay JOBS sin CV, mostrar mercado sin personalización
   }
   // con datos, continuar
   const name=userProfile?.name || 'Tu perfil';
   const userSkills=userProfile?.skills || new Set();
-  // radar title
+  // nombres en todos los gráficos
+  const cards=[
+    ['card-score', `Distribución de Score — ${name}`],
+    ['card-salary', `Salario por Score — ${name}`],
+    ['card-skills', `Top Skills — ${name}`],
+    ['card-company', `Top Empresas — ${name}`],
+    ['card-modality', `Modalidades — ${name}`],
+    ['card-location', `Ubicaciones — ${name}`],
+    ['card-radar', `${name} vs Mercado`],
+    ['card-gap', `Skill Gaps — ${name}`],
+  ];
+  cards.forEach(([id, title])=>{
+    const card=document.getElementById(id);
+    if(card){
+      const h3=card.querySelector('h3');
+      if(h3){
+        const hint=h3.querySelector('.hint');
+        const hintHtml=hint? hint.outerHTML : '<span class="hint">click para filtrar</span>';
+        h3.innerHTML=`${title} <span class="hint">${hint? hint.textContent : 'click para filtrar'}</span>`;
+        // re-add hint element if needed
+        if(!h3.querySelector('.hint') && hint) h3.appendChild(hint);
+      }
+    }
+  });
+  // also update h3 for radar specifically already done above but keep
   const radarCard=document.getElementById('card-radar');
   if(radarCard){
     const h3=radarCard.querySelector('h3');
@@ -545,13 +579,8 @@ function recomputeAllScores(){
   JOBS.forEach(j=>{
     const old=j.score;
     j.score=computeScorePersonalized(j.skills, j.ubicacion, j.modalidad, j.titulo);
-    // recalcular salario estimado si es ARS (USD se mantiene)
-    if(j.salary_currency==='ARS'){
-      j.salary_ars=estimateSalaryARS(j.score, j.titulo, j.skills);
-      j.salary_formatted=`$${j.salary_ars.toLocaleString('es-AR')}`;
-      j.salary_display=`$${j.salary_ars.toLocaleString('es-AR')} ARS/mes`;
-      j.salary_ars_equivalent=j.salary_ars;
-    }
+    // NO recalcular salario inventado — solo mantener si ya había dato real, si no queda No informado
+    // (no tocar salary_ars si es null)
   });
   // refrescar todo
   filtered=[...JOBS];
@@ -748,18 +777,26 @@ function enrichRow(r, idx){
   if(!titulo) return null;
   let skills=detectSkills(titulo, notas);
   let score=userProfile? computeScorePersonalized(skills, ubicacion, modalidad, titulo) : computeScore_ORIG(skills, ubicacion, modalidad, titulo);
-  // salary: try USD explicit, else estimate
+  // salary: solo si hay dato real en Sheet o USD explícito en notas — NO inventar
   const usd=parseUSD(notas);
-  let salary_ars, salary_currency, salary_usd_monthly=null, salary_display, salary_formatted, salary_notes_usd=false;
+  // intentar leer salario de columnas extra del Sheet (si el Sheet tiene columna salario)
+  let sheetSalary=null;
+  // buscar en columnas 8+ por si el Sheet trae salary_ars o salary_formatted
+  for(let k=8;k<r.length;k++){ const v=(r[k]||'').trim(); if(v && /^\$?[\d\.\,\s]+$/.test(v) && parseInt(v.replace(/[^\d]/g,''))>10000){ const n=parseInt(v.replace(/[^\d]/g,'')); if(n>50000) sheetSalary=n; } }
+  let salary_ars=null, salary_currency=null, salary_usd_monthly=null, salary_display='No informado', salary_formatted='—', salary_notes_usd=false;
   if(usd){
     salary_currency='USD'; salary_usd_monthly=usd; salary_ars=usd*1625;
     salary_display=`USD ${usd.toLocaleString('es-AR')} /mes`;
     salary_formatted=`USD ${usd.toLocaleString('es-AR')}`;
-  } else {
-    salary_ars=estimateSalaryARS(score, titulo, skills);
-    salary_currency='ARS';
+  } else if(sheetSalary){
+    salary_currency='ARS'; salary_ars=sheetSalary;
     salary_display=`$${salary_ars.toLocaleString('es-AR')} ARS/mes`;
     salary_formatted=`$${salary_ars.toLocaleString('es-AR')}`;
+  } else {
+    // sin dato salarial — no inventar
+    salary_ars=null;
+    salary_display='No informado';
+    salary_formatted='—';
     if(/USD/i.test(notas)) salary_notes_usd=true;
   }
   // modalidad filter: descartar presencial fuera BA (mismo que v3)
@@ -874,7 +911,8 @@ const fmtSalary = (j)=>{
   if(j.salary_currency==='USD' && j.salary_usd_monthly){
     return '<span class="salary usd">USD '+j.salary_usd_monthly.toLocaleString('es-AR')+'<small style="font-weight:400;color:var(--muted)">/mes</small></span><div style="font-size:.72rem;color:var(--muted)">≈ '+fmtARS(j.salary_ars)+' </div>';
   }
-  return '<span class="salary">'+j.salary_formatted+'<small style="font-weight:400;color:var(--muted)"> ARS</small></span>';
+  if(j.salary_ars) return '<span class="salary">'+j.salary_formatted+'<small style="font-weight:400;color:var(--muted)"> ARS</small></span>';
+  return '<span style="color:var(--muted);font-size:.8rem">No informado</span>';
 };
 const fmt = n => '$'+n.toLocaleString('es-AR');
 
@@ -904,11 +942,14 @@ function updateKpis(){
   const mid = JOBS.filter(j=>j.score>=70 && j.score<90).length;
   const remote = JOBS.filter(j=>j.modalidad==='Remote').length;
   const ar = JOBS.filter(j=> (j.ubicacion||'').toLowerCase().includes('argentina') || (j.ubicacion||'').toLowerCase().includes('latam') || (j.ubicacion||'').toLowerCase().includes('latin')).length;
-  const avg = Math.round(JOBS.reduce((a,j)=>a+j.salary_ars,0)/n);
-  const med = [...JOBS].sort((a,b)=>a.salary_ars-b.salary_ars)[Math.floor(n/2)].salary_ars;
-  const avgHigh = Math.round(JOBS.filter(j=>j.score>=90).reduce((a,j)=>a+j.salary_ars,0)/Math.max(1,high));
-  const avgRest = Math.round(JOBS.filter(j=>j.score<90).reduce((a,j)=>a+j.salary_ars,0)/Math.max(1,n-high));
-  const premium = ((avgHigh/avgRest-1)*100).toFixed(0);
+  const withSalary=JOBS.filter(j=>j.salary_ars);
+  const avg = withSalary.length? Math.round(withSalary.reduce((a,j)=>a+j.salary_ars,0)/withSalary.length) : null;
+  const med = withSalary.length? [...withSalary].sort((a,b)=>a.salary_ars-b.salary_ars)[Math.floor(withSalary.length/2)].salary_ars : null;
+  const highWithSalary=JOBS.filter(j=>j.score>=90 && j.salary_ars);
+  const restWithSalary=JOBS.filter(j=>j.score<90 && j.salary_ars);
+  const avgHigh = highWithSalary.length? Math.round(highWithSalary.reduce((a,j)=>a+j.salary_ars,0)/highWithSalary.length) : null;
+  const avgRest = restWithSalary.length? Math.round(restWithSalary.reduce((a,j)=>a+j.salary_ars,0)/restWithSalary.length) : null;
+  const premium = (avgHigh && avgRest)? ((avgHigh/avgRest-1)*100).toFixed(0) : null;
   document.getElementById('kpiTotal').textContent=n;
   document.getElementById('kpiTop').textContent=high;
   document.getElementById('kpiMid').textContent=mid;
@@ -917,15 +958,17 @@ function updateKpis(){
   document.getElementById('kpiAR').textContent=ar;
   document.getElementById('heroScore').innerHTML= high+' <small>/ '+n+' · '+(high/n*100).toFixed(1)+'%</small>';
   document.getElementById('heroRemotePct').textContent=(remote/n*100).toFixed(0)+'% Remote';
-  document.getElementById('heroAvgHigh').textContent=fmt(avgHigh);
-  document.getElementById('heroAvgRest').textContent=fmt(avgRest);
-  document.getElementById('heroSalaryPremium').textContent='+'+premium+'% vs resto';
+  document.getElementById('heroAvgHigh').textContent=avgHigh? fmt(avgHigh) : 'No informado';
+  document.getElementById('heroAvgRest').textContent=avgRest? fmt(avgRest) : 'No informado';
+  document.getElementById('heroSalaryPremium').textContent=premium? '+'+premium+'% vs resto' : 'sin datos salariales';
   document.getElementById('mini90').textContent=high;
   document.getElementById('mini80').textContent=JOBS.filter(j=>j.score>=80&&j.score<90).length;
   document.getElementById('mini70').textContent=JOBS.filter(j=>j.score>=70&&j.score<80).length;
   document.getElementById('mini60').textContent=JOBS.filter(j=>j.score>=60&&j.score<70).length;
-  document.getElementById('miniAvg').textContent=fmt(avg);
-  document.getElementById('miniMed').textContent=fmt(med);
+  document.getElementById('miniAvg').textContent=avg? fmt(avg) : 'No informado';
+  document.getElementById('miniMed').textContent=med? fmt(med) : 'No informado';
+  const topJob=withSalary.length? [...withSalary].sort((a,b)=>b.salary_ars-a.salary_ars)[0] : null;
+  document.getElementById('miniTopSalary').textContent=topJob? fmt(topJob.salary_ars)+' ('+topJob.empresa+')' : 'No informado';
 }
 
 function buildSkillFilter(){
@@ -1019,14 +1062,19 @@ function renderCharts(){
     applyFilters(); scrollToTables();
   };
   charts.push(new Chart(document.getElementById('scoreChart'),{type:'bar',data:{labels:bucketLabels,datasets:[{data:Object.values(buckets),backgroundColor:['#f59e0b','#3b82f6','#22c55e','#f472b6'],borderRadius:8,hoverBackgroundColor:['#fbbf24','#60a5fa','#4ade80','#f9a8d4']}]},options:{responsive:true,onClick:bucketOnClick,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'#1e293b'},ticks:{precision:0}}}}}));
-  // salary by bucket
-  const avgByBucket={};
+  // salary by bucket — solo datos reales, no inventados
+  const avgByBucket={}; let hasSalary=false;
   for(const k of Object.keys(buckets)){
     const [lo,hi]=k.split('-').map(Number);
-    const vals=JOBS.filter(j=>j.score>=lo && j.score<=hi).map(j=>j.salary_ars);
+    const vals=JOBS.filter(j=>j.score>=lo && j.score<=hi && j.salary_ars).map(j=>j.salary_ars);
+    if(vals.length) hasSalary=true;
     avgByBucket[k]= vals.length? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):0;
   }
-  charts.push(new Chart(document.getElementById('salaryChart'),{type:'bar',data:{labels:Object.keys(avgByBucket),datasets:[{label:'Avg ARS',data:Object.values(avgByBucket),backgroundColor:'#06b6d4',hoverBackgroundColor:'#22d3ee',borderRadius:8}]},options:{responsive:true,onClick:bucketOnClick,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmt(ctx.raw)}}},scales:{x:{grid:{display:false}},y:{grid:{color:'#1e293b'},ticks:{callback:v=>'$'+(v/1000000).toFixed(1)+'M'}}}}}));
+  if(!hasSalary){
+    charts.push(new Chart(document.getElementById('salaryChart'),{type:'bar',data:{labels:Object.keys(avgByBucket),datasets:[{label:'Sin datos salariales',data:Object.values(avgByBucket),backgroundColor:'#334155',borderRadius:8}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{enabled:false},title:{display:true,text:'Sin datos salariales — no inventado',color:'#94a3b8'}},scales:{x:{grid:{display:false}},y:{grid:{color:'#1e293b'},ticks:{callback:v=>''}}}}}));
+  } else {
+    charts.push(new Chart(document.getElementById('salaryChart'),{type:'bar',data:{labels:Object.keys(avgByBucket),datasets:[{label:'Avg ARS',data:Object.values(avgByBucket),backgroundColor:'#06b6d4',hoverBackgroundColor:'#22d3ee',borderRadius:8}]},options:{responsive:true,onClick:bucketOnClick,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.raw? fmt(ctx.raw): 'No informado'}}},scales:{x:{grid:{display:false}},y:{grid:{color:'#1e293b'},ticks:{callback:v=>'$'+(v/1000000).toFixed(1)+'M'}}}}}));
+  }
   // skills
   const sc={}; JOBS.forEach(j=>(j.skills||[]).forEach(s=>sc[s]=(sc[s]||0)+1));
   const topS=Object.entries(sc).sort((a,b)=>b[1]-a[1]).slice(0,10);
