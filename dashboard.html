@@ -466,7 +466,7 @@ function updateDynamicInsights(){
     // pero si hay JOBS sin CV, mostrar mercado sin personalización
   }
   // con datos, continuar
-  const name=userProfile?.name || 'Tu perfil';
+  const name=userProfile?.name || 'Sin CV';
   const userSkills=userProfile?.skills || new Set();
   // nombres en todos los gráficos
   const cards=[
@@ -530,7 +530,7 @@ function updateDynamicInsights(){
     } else if(!userProfile){
       urgentEl.innerHTML=allMarket.slice(0,3).map(([s,c])=>`<li>${s} — ${c} jobs (${(c/JOBS.length*100).toFixed(1)}%)</li>`).join('');
     } else {
-      urgentEl.innerHTML='<li style="color:var(--green)">¡Sin gaps críticos! Tu perfil cubre el top del mercado</li>';
+      urgentEl.innerHTML=`<li style="color:var(--green)">¡Sin gaps críticos! ${name} cubre el top del mercado</li>`;
     }
     const actionEl=document.getElementById('recUrgentAction');
     if(actionEl){
@@ -567,7 +567,7 @@ function updateDynamicInsights(){
     else insights[2].innerHTML=`<b>Mercado:</b> Top skills ${allMarket.slice(0,3).map(t=>t[0]+' ('+t[1]+')').join(', ')} — cargá tu CV para tu gap`;
   }
   if(insights[6]){
-    if(userProfile) insights[6].innerHTML=`<b>${name}:</b> Tu perfil vs demanda. ${gaps.length? 'Brecha en '+gaps.slice(0,2).map(g=>g[0]).join(' y ') : 'Perfil alineado'}.`;
+    if(userProfile) insights[6].innerHTML=`<b>${name}:</b> ${name} vs demanda · ${gaps.length? 'Brecha en '+gaps.slice(0,2).map(g=>g[0]).join(' y ') : 'Perfil alineado'}.`;
     else insights[6].textContent='Cargá tu CV para ver tu radar personalizado';
   }
   if(insights[7]){
