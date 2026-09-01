@@ -1,0 +1,69 @@
+[
+  {
+    "job_id": "DEMO-001",
+    "fecha_scrapeo": "2026-09-01",
+    "titulo": "Project Manager - Remote LATAM",
+    "empresa": "Demo Corp",
+    "ubicacion": "Latin America",
+    "modalidad": "Remote",
+    "url": "https://example.com",
+    "notas": "Ejemplo. 3+ años PM. English.",
+    "skills": [
+      "Project Manager",
+      "Marketing",
+      "Leadership"
+    ],
+    "score": 95,
+    "salary_ars": 2100000,
+    "salary_formatted": "$2.100.000",
+    "salary_currency": "ARS",
+    "salary_display": "$2.100.000 ARS/mes",
+    "salary_ars_equivalent": 2100000,
+    "salary_usd_monthly": null,
+    "salary_notes_usd": false
+  },
+  {
+    "job_id": "DEMO-002",
+    "fecha_scrapeo": "2026-09-01",
+    "titulo": "Scrum Master - Remote",
+    "empresa": "Demo Agile",
+    "ubicacion": "Argentina",
+    "modalidad": "Remote",
+    "url": "https://example.com",
+    "notas": "Scrum Master. 2 años.",
+    "skills": [
+      "Scrum Master",
+      "Agile/Scrum"
+    ],
+    "score": 75,
+    "salary_ars": 1300000,
+    "salary_formatted": "$1.300.000",
+    "salary_currency": "ARS",
+    "salary_display": "$1.300.000 ARS/mes",
+    "salary_ars_equivalent": 1300000,
+    "salary_usd_monthly": null,
+    "salary_notes_usd": false
+  },
+  {
+    "job_id": "DEMO-003",
+    "fecha_scrapeo": "2026-09-01",
+    "titulo": "Marketing Manager - USD 2000",
+    "empresa": "Demo Marketing",
+    "ubicacion": "Buenos Aires, Argentina",
+    "modalidad": "Remote",
+    "url": "https://example.com",
+    "notas": "USD 2000/month. Marketing.",
+    "skills": [
+      "Marketing",
+      "Leadership"
+    ],
+    "score": 85,
+    "salary_ars": 3250000,
+    "salary_formatted": "USD 2.000",
+    "salary_currency": "USD",
+    "salary_display": "USD 2.000 /mes",
+    "salary_ars_equivalent": 3250000,
+    "salary_usd_monthly": 2000,
+    "salary_notes_usd": false
+  }
+]

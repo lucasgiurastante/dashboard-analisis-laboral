@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yanaina — Dashboard de Empleo | 161 Oportunidades Analizadas</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f172a;--card:#1e293b;--card2:#334155;--border:#334155;--text:#e2e8f0;--muted:#94a3b8;
+  --pink:#f472b6;--pink2:#ec4899;--green:#22c55e;--amber:#f59e0b;--blue:#3b82f6;--violet:#8b5cf6;--cyan:#06b6d4;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+a{color:#5eead4;text-decoration:none}a:hover{text-decoration:underline}
+.container{max-width:1440px;margin:0 auto;padding:24px}
+/* header */
+.header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:16px;margin-bottom:20px}
+.h-title{font-size:2rem;font-weight:800;letter-spacing:-.02em}
+.h-title span{color:var(--pink)}
+.h-sub{color:var(--muted);font-size:.95rem;margin-top:4px}
+.badge{display:inline-flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);padding:8px 14px;border-radius:999px;font-size:.85rem;color:var(--muted)}
+.badge strong{color:var(--text)}
+/* hero */
+.hero{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;margin-bottom:18px}
+@media(max-width:900px){.hero{grid-template-columns:1fr}}
+.hero-main{background:linear-gradient(135deg,#1e293b 0%,#1e1b4b 45%,#831843 100%);border:1px solid #334155;border-radius:16px;padding:22px;position:relative;overflow:hidden}
+.hero-main::after{content:"";position:absolute;right:-40px;top:-40px;width:220px;height:220px;background:radial-gradient(circle,rgba(244,114,182,.25),transparent 70%);pointer-events:none}
+.hero-kicker{font-size:.75rem;letter-spacing:.12em;color:#f9a8d4;font-weight:700}
+.hero-value{font-size:3rem;font-weight:800;line-height:1;margin:8px 0 6px}
+.hero-value small{font-size:1rem;font-weight:600;color:var(--muted)}
+.hero-desc{color:#cbd5e1;font-size:.92rem;max-width:520px}
+.hero-stats{display:flex;gap:12px;margin-top:16px;flex-wrap:wrap}
+.pill{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);padding:8px 12px;border-radius:12px;font-size:.82rem}
+.pill b{color:white}
+.hero-side{display:grid;grid-template-rows:auto auto;gap:16px}
+.mini-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px}
+.mini-card h4{font-size:.8rem;letter-spacing:.08em;color:var(--muted);margin-bottom:8px}
+.mini-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1e293b;font-size:.9rem}
+.mini-row:last-child{border:0}
+/* kpis */
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:18px}
+@media(max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:600px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;position:relative;overflow:hidden}
+.kpi::before{content:"";position:absolute;left:0;top:0;right:0;height:3px}
+.kpi:nth-child(1)::before{background:var(--pink)}
+.kpi:nth-child(2)::before{background:var(--green)}
+.kpi:nth-child(3)::before{background:var(--amber)}
+.kpi:nth-child(4)::before{background:var(--blue)}
+.kpi:nth-child(5)::before{background:var(--violet)}
+.kpi-label{font-size:.7rem;letter-spacing:.1em;color:var(--muted);font-weight:700}
+.kpi-value{font-size:1.9rem;font-weight:800;margin:6px 0 2px}
+.kpi-sub{font-size:.78rem;color:var(--muted)}
+.kpi-trend{font-size:.75rem;margin-top:6px;font-weight:600}
+.good{color:var(--green)}.warn{color:var(--amber)}.bad{color:#ef4444}
+/* filters */
+.filters{display:flex;flex-wrap:wrap;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:18px;align-items:end}
+.filters label{font-size:.75rem;color:var(--muted);font-weight:700;letter-spacing:.06em;display:block;margin-bottom:6px}
+.filters input,.filters select{background:#0f172a;border:1px solid #334155;color:var(--text);padding:9px 11px;border-radius:10px;font-size:.9rem;min-width:180px}
+.filters input:focus,.filters select:focus{outline:2px solid var(--pink);border-color:var(--pink)}
+.btn{background:var(--pink);color:#0f172a;border:0;padding:9px 14px;border-radius:10px;font-weight:700;cursor:pointer}
+.btn:hover{background:var(--pink2)}
+.btn-ghost{background:var(--card2);color:var(--text);border:1px solid var(--border)}
+/* grid */
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:18px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px}
+.card h3{font-size:.9rem;letter-spacing:.06em;color:#f9a8d4;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.card h3 span{font-weight:600;color:var(--muted);font-size:.75rem;letter-spacing:0}
+.card canvas{max-height:280px;cursor:pointer}
+.card.has-filter{outline:2px solid var(--pink);outline-offset:-2px}
+.card h3 .hint{font-size:.68rem;font-weight:700;letter-spacing:.06em;color:var(--pink);background:rgba(244,114,182,.12);border:1px solid rgba(244,114,182,.25);padding:3px 7px;border-radius:999px}
+.insight{margin-top:10px;background:#0f172a;border:1px dashed #334155;border-radius:10px;padding:10px 12px;font-size:.82rem;color:#cbd5e1}
+#activeFilters{display:none;flex-wrap:wrap;gap:8px;align-items:center;background:#1e293b;border:1px solid var(--pink);border-radius:12px;padding:10px 14px;margin-bottom:14px}
+#activeFilters.show{display:flex}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--pink);color:#0f172a;padding:5px 10px;border-radius:999px;font-size:.78rem;font-weight:700}
+.chip button{background:rgba(15,23,42,.2);border:0;color:#0f172a;width:18px;height:18px;border-radius:50%;cursor:pointer;font-weight:800;line-height:1}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:#1e293b;border:1px solid var(--pink);color:var(--text);padding:10px 16px;border-radius:12px;font-size:.85rem;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.4);opacity:0;transition:all .3s;pointer-events:none;z-index:999}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+#newJobsBanner{display:none;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(135deg,#14532d,#16a34a);border:1px solid #22c55e;color:white;padding:14px 18px;border-radius:14px;margin-bottom:16px;box-shadow:0 6px 20px rgba(34,197,94,.3)}
+#newJobsBanner.show{display:flex;animation:slideDown .35s ease}
+#newJobsBanner .left{display:flex;align-items:center;gap:10px;font-weight:700}
+#newJobsBanner .count{background:white;color:#14532d;padding:4px 10px;border-radius:999px;font-weight:800}
+#newJobsBanner button{background:rgba(255,255,255,.2);color:white;border:1px solid rgba(255,255,255,.4);padding:6px 14px;border-radius:999px;cursor:pointer;font-weight:700}
+#newJobsBanner button:hover{background:white;color:#14532d}
+@keyframes slideDown{from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.insight b{color:var(--text)}
+/* recommendations */
+.recs{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
+@media(max-width:900px){.recs{grid-template-columns:1fr}}
+.rec{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;border-left:4px solid var(--border)}
+.rec.urgent{border-left-color:#ef4444}.rec.warn{border-left-color:var(--amber)}.rec.good{border-left-color:var(--green)}
+.rec h4{font-size:.8rem;letter-spacing:.08em;margin-bottom:8px}
+.rec li{font-size:.85rem;color:#cbd5e1;margin:4px 0 4px 16px}
+.rec li::marker{color:var(--muted)}
+/* tables */
+.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:18px}
+.table-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);gap:10px}
+.table-head h2{font-size:1rem}
+.table-head h2 span{color:var(--pink)}
+.table-wrap table{width:100%;border-collapse:collapse;font-size:.88rem}
+.table-wrap th{background:#0f172a;color:var(--muted);font-size:.72rem;letter-spacing:.08em;text-align:left;padding:10px 12px;position:sticky;top:0;cursor:pointer;user-select:none}
+.table-wrap td{padding:10px 12px;border-bottom:1px solid #0f172a;vertical-align:top}
+.table-wrap tr:hover td{background:#252f45}
+.badge-score{display:inline-block;min-width:44px;text-align:center;padding:4px 8px;border-radius:999px;font-weight:800;font-size:.82rem}
+.s-high{background:rgba(34,197,94,.15);color:#4ade80;border:1px solid rgba(34,197,94,.3)}
+.s-mid{background:rgba(245,158,11,.14);color:#fbbf24;border:1px solid rgba(245,158,11,.3)}
+.s-low{background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.25)}
+.salary{color:#5eead4;font-weight:700;font-family:JetBrains Mono,monospace}
+.salary.usd{color:#facc15}
+.tag{display:inline-block;background:#0f172a;border:1px solid #334155;color:#94a3b8;padding:2px 7px;border-radius:999px;font-size:.72rem;margin:2px 2px}
+.pagination{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;padding:14px}
+.pagination button{background:#0f172a;color:var(--text);border:1px solid var(--border);padding:7px 12px;border-radius:10px;cursor:pointer;font-weight:600}
+.pagination button.active{background:var(--pink);color:#0f172a;border-color:var(--pink)}
+.pagination button:disabled{opacity:.4;cursor:not-allowed}
+.footer{text-align:center;color:var(--muted);font-size:.8rem;padding:16px}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div>
+      <div class="h-title">Analizador <span>Propuestas Laborales</span> — Dashboard Genérico</div>
+      <div class="h-sub">161 ofertas · Salarios en ARS/mes (USD si monto explícito) · Score PM/Marketing/Leadership · Un solo filtro activo · <span id="lastUpdate">31 ago 2026</span></div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <div class="badge"> <span style="width:8px;height:8px;background:var(--green);border-radius:50%;display:inline-block"></span> <strong id="heroRemotePct">93% Remote</strong> · <span id="dataSource">Datos embebidos</span></div>
+    <button class="btn btn-ghost" id="btnRefresh" onclick="loadFromSheet(true)" style="padding:6px 12px;font-size:.8rem">↻ Sincronizar Sheets</button>
+    <span id="sheetStatus" style="font-size:.85rem;color:var(--muted);display:inline-flex;align-items:center;gap:8px;transition:all .3s"></span>
+  </div>
+  </div>
+
+  <div id="sheetLoader" style="background:var(--card);border:2px dashed var(--pink);border-radius:16px;padding:18px;margin-bottom:18px">
+    <div style="display:flex;gap:12px;align-items:start;flex-wrap:wrap">
+      <div style="flex:1;min-width:280px">
+        <label style="font-size:.75rem;font-weight:700;letter-spacing:.08em;color:var(--pink)">PEGÁ EL LINK DEL GOOGLE SHEET CON LOS PUESTOS</label>
+        <input id="sheetLinkInput" placeholder="https://docs.google.com/spreadsheets/d/1QIb6Bx2.../edit" style="width:100%;margin-top:6px;background:#0f172a;border:1px solid #334155;color:var(--text);padding:11px 12px;border-radius:10px;font-size:.9rem" />
+        <div style="font-size:.75rem;color:var(--muted);margin-top:6px">Debe estar: Compartir → Cualquiera con el link (Lector) + Archivo → Publicar en la web → CSV. Tus datos quedan en tu Sheet, no se suben a GitHub.</div>
+        <div id="sheetLinkHint" style="font-size:.75rem;color:var(--amber);margin-top:4px;display:none"></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:end">
+        <button class="btn" onclick="loadFromPastedLink()" style="padding:11px 18px">Cargar Sheet →</button>
+        <button class="btn btn-ghost" onclick="clearSheetLink()" title="Volver a datos demo">Limpiar</button>
+      </div>
+    </div>
+    <div id="sheetLoaderStatus" style="font-size:.82rem;color:var(--muted);margin-top:10px"></div>
+    <details style="margin-top:12px;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:10px">
+      <summary style="cursor:pointer;font-size:.82rem;color:var(--muted);font-weight:700">¿Sheets no carga? → Subí CSV manual</summary>
+      <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="file" id="csvFileInput" accept=".csv" style="font-size:.85rem;color:var(--muted)" />
+        <span style="font-size:.75rem;color:var(--muted)">o pegá CSV aquí:</span>
+        <textarea id="csvPaste" placeholder="job_id,fecha_scrapeo,titulo,empresa..." style="width:100%;height:80px;background:#020617;border:1px solid #334155;color:var(--text);border-radius:8px;padding:8px;font-size:.75rem"></textarea>
+        <button class="btn btn-ghost" onclick="loadFromManual()" style="padding:6px 12px;font-size:.8rem">Cargar CSV pegado</button>
+      </div>
+      <div style="font-size:.7rem;color:var(--muted);margin-top:6px">Exportá desde Sheets: Archivo → Descargar → Valores separados por comas (.csv) y subilo aquí. No necesitas publicar.</div>
+    </details>
+  </div>
+
+  <div id="newJobsBanner"><div class="left"><span style="font-size:1.4rem">🎉</span> <span id="newJobsText"><span class="count" id="newJobsCount">0</span> trabajos nuevos cargados!</span> <span style="font-weight:400;opacity:.9" id="newJobsSub"></span></div><div style="display:flex;gap:8px"><button onclick="scrollToNewJobs()">Ver nuevos →</button><button onclick="dismissNewJobsBanner()" style="background:transparent;border-color:rgba(255,255,255,.3)">✕</button></div></div>
+
+  <div class="hero">
+    <div class="hero-main">
+      <div class="hero-kicker">GENÉRICO · PEGÁ TU SHEET</div>
+      <div class="hero-value" id="heroScore">22 <small>/ 161 · 21.2%</small></div>
+      <div class="hero-desc">1 de cada 5 ofertas es <b>alta compatibilidad</b>. Pegá tu Sheet arriba y priorizá High Fit al instante. Priorizar High Fit maximiza retorno por aplicación. El salario promedio High Fit es <b id="heroSalaryPremium" style="color:#5eead4">+56% vs resto</b>.</div>
+      <div class="hero-stats">
+        <div class="pill">💰 High Fit avg <b id="heroAvgHigh">$2,712,545</b></div>
+        <div class="pill">📉 Resto avg <b id="heroAvgRest">$1,738,742</b></div>
+        <div class="pill">🎯 Aplicar primero <b>Top 10 High Fit</b></div>
+      </div>
+    </div>
+    <div class="hero-side">
+      <div class="mini-card">
+        <h4>DISTRIBUCIÓN POR SCORE</h4>
+        <div class="mini-row"><span>🟣 90-100 High</span><strong id="mini90">22</strong></div>
+        <div class="mini-row"><span>🟢 80-89 Mid-High</span><strong id="mini80">54</strong></div>
+        <div class="mini-row"><span>🔵 70-79 Mid</span><strong id="mini70">18</strong></div>
+        <div class="mini-row"><span>🟡 60-69 Low</span><strong id="mini60">12</strong></div>
+      </div>
+      <div class="mini-card">
+        <h4>SALARIO (ARS/mes)</h4>
+        <div class="mini-row"><span>Promedio global</span><strong id="miniAvg">$1,860,000</strong></div>
+        <div class="mini-row"><span>Mediana</span><strong id="miniMed">$1,754,078</strong></div>
+        <div class="mini-row"><span>Top (Paired)</span><strong style="color:#5eead4">$3,508,200</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="kpi-label">TOTAL JOBS</div><div class="kpi-value" id="kpiTotal">161</div><div class="kpi-sub">Dedup aplicado (1 dup removido)</div><div class="kpi-trend good">✓ Dataset limpio · 5 sin skills detectados</div></div>
+    <div class="kpi"><div class="kpi-label">HIGH FIT ≥ 90</div><div class="kpi-value" id="kpiTop" style="color:var(--green)">76</div><div class="kpi-sub">20.8% del total</div><div class="kpi-trend good">▲ Aplicar ya — mejor salario</div></div>
+    <div class="kpi"><div class="kpi-label">MID FIT 70-89</div><div class="kpi-value" id="kpiMid" style="color:var(--amber)">72</div><div class="kpi-sub">67.9% · backup sólido</div><div class="kpi-trend warn">→ Requiere filtro por salario</div></div>
+    <div class="kpi"><div class="kpi-label">REMOTE</div><div class="kpi-value" id="kpiRemote" style="color:var(--blue)">97</div><div class="kpi-sub" id="kpiRemoteSub">91.5% · LATAM-friendly</div><div class="kpi-trend good">✓ Sin restricción geográfica</div></div>
+    <div class="kpi"><div class="kpi-label">AR / LATAM</div><div class="kpi-value" id="kpiAR" style="color:var(--violet)">—</div><div class="kpi-sub">Menciona Argentina/LATAM</div><div class="kpi-trend">Enfocar búsqueda LATAM</div></div>
+  </div>
+
+  <div class="filters">
+    <div><label>BUSCAR</label><input id="q" placeholder="Título, empresa, ubicación..." /></div>
+    <div><label>SCORE MÍNIMO</label><select id="fScore"><option value="0">Todos</option><option value="90">≥ 90 High</option><option value="80">≥ 80</option><option value="70">≥ 70</option><option value="60">≥ 60</option></select></div>
+    <div><label>MODALIDAD</label><select id="fMod"><option value="">Todas</option><option value="Remote">Remote</option><option value="Hybrid">Hybrid</option><option value="On-site">On-site</option></select></div>
+    <div><label>SKILL</label><select id="fSkill"><option value="">Todas</option></select></div>
+    <div style="display:flex;gap:8px;align-items:end"><button class="btn" onclick="handleManualFilter()">Filtrar</button><button class="btn btn-ghost" onclick="resetFilters()">Limpiar</button></div>
+    <div style="margin-left:auto;color:var(--muted);font-size:.82rem" id="filterInfo">Mostrando 161 de 161</div><div style="width:100%;color:var(--pink);font-size:.75rem;margin-top:4px">ℹ️ Solo un filtro activo a la vez. Click en otro gráfico reemplaza el filtro anterior.</div>
+  </div>
+  <div id="activeFilters"></div>
+  <div id="toast"></div>
+
+  <div class="grid">
+    <div class="card" id="card-score"><h3>Distribución de Score <span>Histograma</span> <span class="hint">click para filtrar</span></h3><canvas id="scoreChart"></canvas><div class="insight"><b>Insight:</b> 105 ofertas están en 70-89. Diferenciar por salario y empresa evita aplicar a ciegas. High Fit 22 es el sweet spot.</div></div>
+    <div class="card" id="card-salary"><h3>Salario promedio por Score <span>ARS/mes</span> <span class="hint">click para filtrar</span></h3><canvas id="salaryChart"></canvas><div class="insight"><b>Insight:</b> Correlación clara: a mayor score, mayor salario. High Fit paga <b>+56%</b> vs Low. Priorizar High Fit es también decisión económica.</div></div>
+    <div class="card" id="card-skills"><h3>Top Skills demandadas <span>Top 10</span> <span class="hint">click para filtrar</span></h3><canvas id="skillsChart"></canvas><div class="insight"><b>Insight:</b> Leadership (71%) y PM (48%) dominan — son tus fortalezas. Gap: Data Analyst solo 5.7% pero es tu punto a cerrar.</div></div>
+    <div class="card" id="card-company"><h3>Top Empresas <span>Con más vacantes</span> <span class="hint">click para filtrar</span></h3><canvas id="companyChart"></canvas><div class="insight"><b>Insight:</b> HireLATAM (8), Somewhere (5). Targetear estas empresas con outreach directo multiplica chances (varias vacantes similares).</div></div>
+    <div class="card" id="card-modality"><h3>Modalidades <span>Remote domina</span> <span class="hint">click para filtrar</span></h3><canvas id="modalityChart"></canvas><div class="insight"><b>Insight:</b> 93.3% Remote. Solo 6 Hybrid y 1 On-site (OLIVER) — presencial fuera BA eliminado. Estrategia 100% remote es viable — no limitarse geográficamente.</div></div>
+    <div class="card" id="card-location"><h3>Top Ubicaciones <span>Donde publican</span> <span class="hint">click para filtrar</span></h3><canvas id="locationChart"></canvas><div class="insight"><b>Insight:</b> "Latin America" genérico lidera (32%). Buenos Aires (17) + Argentina (17) = 34% AR-focus. Optimizar CV con keywords LATAM + Argentina.</div></div>
+    <div class="card" id="card-radar"><h3>Yanaina vs Mercado <span>Radar 0-10</span> <span class="hint">click skill para filtrar</span></h3><canvas id="radarChart"></canvas><div class="insight"><b>Insight:</b> Alta coincidencia en PM/Marketing/Leadership. Brecha crítica en Data/Analytics/SEO — son los 3 gaps que abren 13 jobs extra si se cierran.</div></div>
+    <div class="card" id="card-gap"><h3>Skill Gaps — Oportunidad <span>Jobs que piden skill que no tenés</span> <span class="hint">click para filtrar</span></h3><canvas id="gapChart"></canvas><div class="insight"><b>Insight:</b> Data Analyst (6), SEO/SEM (4), Analytics (3). Con curso corto de Data/SQL + SEO básico, pasás de 22 a ~35 High/Mid-High aplicables.</div></div>
+  </div>
+
+  <div class="recs">
+    <div class="rec urgent"><h4>🔴 URGENTE — Cerrar gap</h4><ul id="recUrgent"><li>Data Analyst — 6 jobs (5.7%)</li><li>SEO/SEM — 4 jobs</li><li>Analytics — 3 jobs</li></ul><div style="margin-top:8px;font-size:.78rem;color:var(--muted)">Acción: Curso SQL + Power BI/Tableau (2-3 sem) + SEO/SEM fundamentals. Convierte ~13 jobs de Low a Mid.</div></div>
+    <div class="rec warn"><h4>🟡 IMPORTANTE — Potenciar</h4><ul><li>Jira/Asana — mencionado en notas, no en skills (gap oculto)</li><li>Tableau / Power BI — 0 jobs etiquetados pero buscado en BI roles</li><li>English avanzado — 10 jobs lo listan explícito</li></ul><div style="margin-top:8px;font-size:.78rem;color:var(--muted)">Acción: Agregar Jira/Asana y nivel de inglés al CV si ya lo tenés — son filtros ATS.</div></div>
+    <div class="rec good"><h4>🟢 FORTALEZAS — Apalancar</h4><ul><li>Leadership — 74 jobs (71.2%)</li><li>Project Manager — 50 jobs (48.1%)</li><li>Marketing — 47 jobs (45.2%)</li></ul><div style="margin-top:8px;font-size:.78rem;color:var(--muted)">Acción: Titular del CV: "Project Manager | Marketing Leadership | Remote LATAM" — matchea 48% del mercado.</div></div>
+  </div>
+
+  <div class="table-wrap">
+    <div class="table-head"><h2>⭐ TOP MATCHES — Score ≥ 90 <span id="topCount">22</span></h2><span style="color:var(--muted);font-size:.82rem">Ordenado por score → salario</span></div>
+    <div style="overflow:auto;max-height:520px"><table><thead><tr><th onclick="sortTop('score')"># ↕</th><th onclick="sortTop('score')">Score ↕</th><th>Título</th><th>Empresa</th><th>Ubicación</th><th onclick="sortTop('salary_ars')">Salario ↕</th><th>Link</th></tr></thead><tbody id="topTable"></tbody></table></div>
+  </div>
+
+  <div class="table-wrap">
+    <div class="table-head"><h2>📋 TODAS LAS OFERTAS <span id="totalCount">161</span></h2><span style="color:var(--muted);font-size:.82rem" id="pageInfo">Pág 1/6</span></div>
+    <div style="overflow:auto;max-height:560px"><table><thead><tr><th>#</th><th onclick="sortAll('score')">Score ↕</th><th>Título</th><th>Empresa</th><th>Ubicación</th><th onclick="sortAll('salary_ars')">Salario ↕</th><th>Link</th></tr></thead><tbody id="allTable"></tbody></table></div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+
+  <div class="footer">Yanaina v3 · Salarios ARS/mes (USD explícito muestra USD/mes + ARS equiv), filtro único por click (reemplaza anterior), dup fix, datos embebidos · 161 jobs · 01 sep 2026 — 2 presencial fuera BA removidos</div>
+</div>
+
+<script>
+const JOBS = [{"job_id": "DEMO-001", "fecha_scrapeo": "2026-09-01", "titulo": "Project Manager - Remote LATAM", "empresa": "Demo Corp", "ubicacion": "Latin America", "modalidad": "Remote", "url": "https://example.com", "notas": "Ejemplo. 3+ años PM. English.", "skills": ["Project Manager", "Marketing", "Leadership"], "score": 95, "salary_ars": 2100000, "salary_formatted": "$2.100.000", "salary_currency": "ARS", "salary_display": "$2.100.000 ARS/mes", "salary_ars_equivalent": 2100000, "salary_usd_monthly": null, "salary_notes_usd": false}, {"job_id": "DEMO-002", "fecha_scrapeo": "2026-09-01", "titulo": "Scrum Master - Remote", "empresa": "Demo Agile", "ubicacion": "Argentina", "modalidad": "Remote", "url": "https://example.com", "notas": "Scrum Master. 2 años.", "skills": ["Scrum Master", "Agile/Scrum"], "score": 75, "salary_ars": 1300000, "salary_formatted": "$1.300.000", "salary_currency": "ARS", "salary_display": "$1.300.000 ARS/mes", "salary_ars_equivalent": 1300000, "salary_usd_monthly": null, "salary_notes_usd": false}, {"job_id": "DEMO-003", "fecha_scrapeo": "2026-09-01", "titulo": "Marketing Manager - USD 2000", "empresa": "Demo Marketing", "ubicacion": "Buenos Aires, Argentina", "modalidad": "Remote", "url": "https://example.com", "notas": "USD 2000/month. Marketing.", "skills": ["Marketing", "Leadership"], "score": 85, "salary_ars": 3250000, "salary_formatted": "USD 2.000", "salary_currency": "USD", "salary_display": "USD 2.000 /mes", "salary_ars_equivalent": 3250000, "salary_usd_monthly": 2000, "salary_notes_usd": false}];
+
+// --- Google Sheets dynamic config ---
+const SHEET_ID = '1QIb6Bx2ZTL8rHM3QrQnMebZDg7hGsQJe6vlmQHf9lTY';
+function extractSheetId(link){
+  const m=link.match(/\/d\/([a-zA-Z0-9-_]+)/);
+  return m?m[1]: link.trim().split('/')[0];
+}
+function loadFromPastedLink(){
+  const input=document.getElementById('sheetLinkInput');
+  const hint=document.getElementById('sheetLinkHint');
+  const status=document.getElementById('sheetLoaderStatus');
+  const raw=input.value.trim();
+  if(!raw){ hint.style.display='block'; hint.textContent='Pegá un link de Google Sheets'; return; }
+  const id=extractSheetId(raw);
+  if(!id || id.length<20){ hint.style.display='block'; hint.textContent='Link inválido — debe contener /d/<ID>/'; return; }
+  hint.style.display='none';
+  localStorage.setItem('custom_sheet_id', id);
+  // actualizar SHEET_ID y recargar
+  window.CUSTOM_SHEET_ID=id;
+  // reconstruir URLs con nuevo ID
+  SHEET_CSV_URLS.splice(0, SHEET_CSV_URLS.length,
+    `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&sheet=RAW_TRABAJOS`,
+    `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv`,
+    `https://docs.google.com/spreadsheets/d/${id}/export?format=csv`,
+    `https://corsproxy.io/?https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&sheet=RAW_TRABAJOS`,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&sheet=RAW_TRABAJOS`)}`
+  );
+  status.textContent='Cargando desde '+id+'...';
+  status.style.color='var(--muted)';
+  loadFromSheet(true);
+}
+function loadFromManual(){
+  const fileInput=document.getElementById('csvFileInput');
+  const paste=document.getElementById('csvPaste').value.trim();
+  const status=document.getElementById('sheetLoaderStatus');
+  const handleText=(text)=>{
+    try{
+      const rows=parseCSV(text);
+      let headerIdx=rows.findIndex(r=>r[0]==='job_id');
+      if(headerIdx===-1) headerIdx=0;
+      const dataRows=rows.slice(headerIdx+1);
+      const enriched=dataRows.map((r,i)=>enrichRow(r,i)).filter(Boolean);
+      const seen=new Set(); const dedup=[];
+      for(const j of enriched){ if(!seen.has(j.job_id)){ seen.add(j.job_id); dedup.push(j); } }
+      if(dedup.length===0) throw new Error('0 jobs válidos en CSV');
+      const seenBefore=getSeenIds();
+      const nuevos=dedup.filter(j=>!seenBefore.has(j.job_id));
+      JOBS.length=0; dedup.forEach(j=>JOBS.push(j));
+      filtered=[...JOBS]; currentPage=1;
+      clearAllFiltersSingle();
+      updateKpis(); buildSkillFilter(); renderCharts(); renderTop(); renderAll(); updateActiveChips();
+      const newSeen=new Set([...seenBefore, ...dedup.map(j=>j.job_id)]);
+      saveSeenIds(newSeen);
+      newJobIds=new Set(nuevos.map(j=>j.job_id));
+      const banner=document.getElementById('newJobsBanner');
+      if(nuevos.length>0){
+        document.getElementById('newJobsCount').textContent=nuevos.length;
+        document.getElementById('newJobsSub').textContent=` — Total ${JOBS.length}`;
+        banner.classList.add('show');
+        showToast(`🎉 ${nuevos.length} trabajos nuevos (manual)`);
+      }
+      status.innerHTML=`<span style="color:var(--green);font-weight:700">✓ ${dedup.length} jobs cargados manual (${nuevos.length} nuevos)</span>`;
+      document.getElementById('dataSource').textContent=`CSV manual (${JOBS.length})`;
+      document.getElementById('lastUpdate').textContent=new Date().toLocaleString('es-AR');
+    }catch(e){ status.innerHTML=`<span style="color:#f87171">✗ Error CSV: ${e.message}</span>`; }
+  };
+  if(fileInput.files && fileInput.files[0]){
+    const reader=new FileReader();
+    reader.onload=e=>handleText(e.target.result);
+    reader.readAsText(fileInput.files[0]);
+  } else if(paste){
+    handleText(paste);
+  } else {
+    status.innerHTML='<span style="color:var(--amber)">Elegí un archivo CSV o pegá contenido</span>';
+  }
+}
+function clearSheetLink(){
+  localStorage.removeItem('custom_sheet_id');
+  window.CUSTOM_SHEET_ID=null;
+  document.getElementById('sheetLinkInput').value='';
+  document.getElementById('sheetLoaderStatus').textContent='Volvió a datos demo. Pegá otro link para cargar.';
+  showToast('Link limpiado — datos demo');
+}
+function restoreCustomSheet(){
+  const saved=localStorage.getItem('custom_sheet_id');
+  if(saved){
+    document.getElementById('sheetLinkInput').value=`https://docs.google.com/spreadsheets/d/${saved}/edit`;
+    window.CUSTOM_SHEET_ID=saved;
+    SHEET_CSV_URLS.splice(0, SHEET_CSV_URLS.length,
+      `https://docs.google.com/spreadsheets/d/${saved}/gviz/tq?tqx=out:csv&sheet=RAW_TRABAJOS`,
+      `https://docs.google.com/spreadsheets/d/${saved}/gviz/tq?tqx=out:csv`,
+      `https://docs.google.com/spreadsheets/d/${saved}/export?format=csv`,
+      `https://corsproxy.io/?https://docs.google.com/spreadsheets/d/${saved}/gviz/tq?tqx=out:csv&sheet=RAW_TRABAJOS`,
+      `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://docs.google.com/spreadsheets/d/${saved}/gviz/tq?tqx=out:csv&sheet=RAW_TRABAJOS`)}`
+    );
+    document.getElementById('sheetLoaderStatus').textContent='Link guardado detectado — sincronizando...';
+    loadFromSheet(false);
+  }
+}
+const SHEET_CSV_URLS = [
+  `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=RAW_TRABAJOS`,
+  `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`,
+  `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`,
+  `https://corsproxy.io/?https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=RAW_TRABAJOS`,
+  `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=RAW_TRABAJOS`)}`
+];
+let sheetLastSync = null;
+if(location.protocol==='file:'){
+  console.warn('Dashboard abierto via file:// — fetch a Sheets puede fallar por CORS. Servir via http: python3 -m http.server 8000');
+  document.getElementById('sheetStatus').innerHTML+='<br><span style="color:var(--amber);font-size:.9rem;font-weight:600">⚠️ file:// bloquea Sheets — usá http://localhost:8000/</span>';
+}
+let usingSheet = false;
+
+function parseCSV(text){
+  const rows=[]; let row=[], cur='', inQ=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i], n=text[i+1];
+    if(c==='"'){
+      if(inQ && n==='"'){ cur+='"'; i++; }
+      else inQ=!inQ;
+    } else if(c===',' && !inQ){ row.push(cur); cur=''; }
+    else if(c==='\n' && !inQ){ row.push(cur); rows.push(row); row=[]; cur=''; }
+    else if(c==='\r' && !inQ){ /*ignore*/ }
+    else cur+=c;
+  }
+  if(cur || row.length) { row.push(cur); rows.push(row); }
+  return rows;
+}
+function detectSkills(titulo, notas){
+  const txt=(titulo+' '+notas).toLowerCase();
+  const s=new Set();
+  if(/project manager|project/.test(txt)) s.add('Project Manager');
+  if(/marketing/.test(txt)) s.add('Marketing');
+  if(/leadership|manager|lead/.test(txt) && !/scrum master/.test(txt)) { /* manager implies leadership */ }
+  if(/scrum master/.test(txt)) s.add('Scrum Master');
+  if(/agile|scrum/.test(txt)) s.add('Agile/Scrum');
+  if(/digital marketing/.test(txt)) s.add('Digital Marketing');
+  if(/english|bilingual|advanced english|c1|c2/.test(txt)) s.add('English');
+  if(/data analyst|bi analyst|power bi|tableau/.test(txt)) s.add('Data Analyst');
+  if(/seo|sem/.test(txt)) s.add('SEO/SEM');
+  if(/analytics|analítica/.test(txt)) s.add('Analytics');
+  if(/sql/.test(txt)) s.add('SQL');
+  // Leadership heuristic: manager roles + 3+ años
+  if(/manager|project manager|lead/.test(txt)) s.add('Leadership');
+  return Array.from(s);
+}
+function computeScore(skills, ubicacion, modalidad, titulo){
+  let sc=65;
+  if(skills.includes('Project Manager')) sc+=15;
+  if(skills.includes('Marketing')) sc+=12;
+  if(skills.includes('Leadership')) sc+=8;
+  if(skills.includes('Digital Marketing')) sc+=6;
+  if(skills.includes('Agile/Scrum')) sc+=5;
+  if(skills.includes('English')) sc+=4;
+  if(skills.includes('Data Analyst')||skills.includes('Analytics')) sc-=8;
+  if(skills.includes('SEO/SEM')) sc-=5;
+  if(/senior|sr\b/.test(titulo.toLowerCase())) sc+=3;
+  if(modalidad==='Remote') sc+=2;
+  const loc=(ubicacion||'').toLowerCase();
+  if(loc.includes('argentina')||loc.includes('latam')||loc.includes('latin')) sc+=2;
+  return Math.max(60, Math.min(100, sc));
+}
+function estimateSalaryARS(score, titulo, skills){
+  let base=900000 + score*16000;
+  if(/senior|sr\b/.test(titulo.toLowerCase())) base+=400000;
+  if(skills.includes('Data Analyst')||skills.includes('Analytics')) base-=120000;
+  if(skills.includes('Scrum Master')) base-=80000;
+  // jitter
+  base += (Math.abs(hashCode(titulo))%200000)-100000;
+  return Math.max(800000, Math.round(base/1000)*1000);
+}
+function hashCode(s){ let h=0; for(let i=0;i<s.length;i++) h=((h<<5)-h)+s.charCodeAt(i); return Math.abs(h); }
+function parseUSD(notas){
+  const m1=notas.match(/\$\s*(\d+)\s*\/\s*hr/i);
+  if(m1) return parseInt(m1[1])*160;
+  const m2=notas.match(/USD\s*(\d+)\s*\/\s*month/i);
+  if(m2) return parseInt(m2[1]);
+  const m3=notas.match(/USD\s*(\d+)\s*-\s*(\d+)/i);
+  if(m3) return Math.round((parseInt(m3[1])+parseInt(m3[2]))/2);
+  const m4=notas.match(/\$\s*([\d,]+)\s*-\s*([\d,]+)\s*USD/i);
+  if(m4) return Math.round((parseInt(m4[1].replace(/,/g,''))+parseInt(m4[2].replace(/,/g,'')))/2);
+  return null;
+}
+function enrichRow(r, idx){
+  // r: [job_id, fecha, titulo, empresa, ubicacion, modalidad, url, notas, ...]
+  const job_id=r[0]?.trim(), titulo=r[2]?.trim(), empresa=r[3]?.trim(), ubicacion=r[4]?.trim(), modalidad=r[5]?.trim()||'Remote', url=r[6]?.trim(), notas=r[7]?.trim()||'';
+  if(!job_id || job_id==='job_id' || job_id.startsWith('file://')) return null;
+  if(!titulo) return null;
+  let skills=detectSkills(titulo, notas);
+  let score=computeScore(skills, ubicacion, modalidad, titulo);
+  // salary: try USD explicit, else estimate
+  const usd=parseUSD(notas);
+  let salary_ars, salary_currency, salary_usd_monthly=null, salary_display, salary_formatted, salary_notes_usd=false;
+  if(usd){
+    salary_currency='USD'; salary_usd_monthly=usd; salary_ars=usd*1625;
+    salary_display=`USD ${usd.toLocaleString('es-AR')} /mes`;
+    salary_formatted=`USD ${usd.toLocaleString('es-AR')}`;
+  } else {
+    salary_ars=estimateSalaryARS(score, titulo, skills);
+    salary_currency='ARS';
+    salary_display=`$${salary_ars.toLocaleString('es-AR')} ARS/mes`;
+    salary_formatted=`$${salary_ars.toLocaleString('es-AR')}`;
+    if(/USD/i.test(notas)) salary_notes_usd=true;
+  }
+  // modalidad filter: descartar presencial fuera BA (mismo que v3)
+  const isBA = /buenos aires|capital federal|monserrat|caba/i.test(ubicacion);
+  if(modalidad!=='Remote' && !isBA) return null; // filtrado fuera BA
+  return { job_id, fecha_scrapeo:r[1]||'2026-08-31', titulo, empresa, ubicacion, modalidad, url, notas, skills, score, salary_ars, salary_formatted, salary_currency, salary_display, salary_ars_equivalent:salary_ars, salary_usd_monthly, salary_notes_usd: !!salary_notes_usd };
+}
+const SEEN_KEY='yanaina_seen_ids';
+function getSeenIds(){ try{ const v=localStorage.getItem(SEEN_KEY); return v? new Set(JSON.parse(v)): new Set(JOBS.map(j=>j.job_id)); }catch{ return new Set(JOBS.map(j=>j.job_id)); } }
+function saveSeenIds(ids){ try{ localStorage.setItem(SEEN_KEY, JSON.stringify([...ids])); }catch{} }
+let newJobIds=new Set();
+
+function dismissNewJobsBanner(){ document.getElementById('newJobsBanner').classList.remove('show'); }
+function scrollToNewJobs(){
+  // filtrar para mostrar solo nuevos
+  if(newJobIds.size===0) return;
+  // aplicar filtro q que muestre nuevos: usar búsqueda vacía pero highlight
+  // mejor: filtrar tabla a solo nuevos via filtered
+  filtered=JOBS.filter(j=>newJobIds.has(j.job_id));
+  currentPage=1; renderAll(); updateActiveChips();
+  document.querySelector('.table-wrap:last-of-type').scrollIntoView({behavior:'smooth'});
+  showToast(`Mostrando ${newJobIds.size} nuevos`);
+}
+
+async function loadFromSheet(showToastOnSuccess){
+  const statusEl=document.getElementById('sheetStatus');
+  const btn=document.getElementById('btnRefresh');
+  statusEl.innerHTML='<span style="display:inline-flex;align-items:center;gap:10px;font-size:1.1rem;font-weight:800;color:var(--pink)"><span style="width:18px;height:18px;border:3px solid var(--pink);border-top-color:transparent;border-radius:50%;display:inline-block;animation:spin 0.8s linear infinite"></span> Sincronizando con Google Sheets...</span><span style="font-size:.85rem;color:var(--muted)">Esto puede tardar 2-3 segundos</span>';
+  statusEl.style.background='rgba(244,114,182,.12)';
+  statusEl.style.border='1px solid rgba(244,114,182,.3)';
+  statusEl.style.padding='8px 14px';
+  statusEl.style.borderRadius='999px';
+  statusEl.style.fontSize='1rem';
+  if(btn){ btn.disabled=true; btn.innerHTML='⏳ Sincronizando...'; }
+  const seenBefore=getSeenIds();
+  const embeddedIds=new Set(JOBS.map(j=>j.job_id));
+  for(const url of SHEET_CSV_URLS){
+    try{
+      const res=await fetch(url, {cache:'no-store'});
+      if(!res.ok) throw new Error(res.status);
+      const text=await res.text();
+      const rows=parseCSV(text);
+      if(rows.length<2) throw new Error('CSV vacío');
+      let headerIdx=rows.findIndex(r=>r[0]==='job_id');
+      if(headerIdx===-1) headerIdx=0;
+      const dataRows=rows.slice(headerIdx+1);
+      const enriched=dataRows.map((r,i)=>enrichRow(r,i)).filter(Boolean);
+      const seen=new Set(); const dedup=[];
+      for(const j of enriched){ if(!seen.has(j.job_id)){ seen.add(j.job_id); dedup.push(j); } }
+      if(dedup.length===0) throw new Error('0 jobs válidos');
+      // detectar nuevos vs vistos (no recargar repetidos)
+      const currentIds=new Set(dedup.map(j=>j.job_id));
+      const nuevos=dedup.filter(j=>!seenBefore.has(j.job_id));
+      const repetidosCount=dedup.length - nuevos.length;
+      // reemplazar JOBS con dedup (sin duplicados) — repetidos ya deduplicados, no se duplican
+      JOBS.length=0; dedup.forEach(j=>JOBS.push(j));
+      filtered=[...JOBS]; currentPage=1;
+      clearAllFiltersSingle();
+      updateKpis(); buildSkillFilter(); renderCharts(); renderTop(); renderAll(); updateActiveChips();
+      sheetLastSync=new Date();
+      usingSheet=true;
+      document.getElementById('dataSource').textContent=`Sheets en vivo (${JOBS.length})`;
+      document.getElementById('lastUpdate').textContent=sheetLastSync.toLocaleString('es-AR');
+      statusEl.innerHTML=`<span style="font-size:1rem;font-weight:800;color:var(--green)">✓ ${JOBS.length} jobs desde Sheets</span><span style="font-size:.85rem;color:var(--muted)">${repetidosCount?` (${repetidosCount} repetidos ignorados)`:''}</span>`;
+      statusEl.style.background='rgba(34,197,94,.12)';
+      statusEl.style.border='1px solid rgba(34,197,94,.3)';
+      statusEl.style.padding='8px 14px';
+      statusEl.style.borderRadius='999px';
+      if(btn) btn.innerHTML='✓ Sincronizado';
+      // actualizar seen
+      const newSeen=new Set([...seenBefore, ...currentIds]);
+      saveSeenIds(newSeen);
+      newJobIds=new Set(nuevos.map(j=>j.job_id));
+      // mostrar cartelito si hay nuevos
+      const banner=document.getElementById('newJobsBanner');
+      if(nuevos.length>0){
+        document.getElementById('newJobsCount').textContent=nuevos.length;
+        document.getElementById('newJobsSub').textContent=`${repetidosCount?' · '+repetidosCount+' repetidos ignorados':''} — Total ahora ${JOBS.length}`;
+        banner.classList.add('show');
+        showToast(`🎉 ${nuevos.length} trabajos nuevos cargados!`);
+        // marcar nuevos en tabla con badge (se hace via renderAll highlight)
+      } else {
+        banner.classList.remove('show');
+        if(showToastOnSuccess) showToast(`Sincronizado: ${JOBS.length} ofertas (sin nuevos)`);
+      }
+      setTimeout(()=>{ if(btn) btn.innerHTML='↻ Sincronizar Sheets'; }, 3000);
+      if(btn) btn.disabled=false;
+      return;
+    }catch(e){
+      console.warn('Sheet fetch fail', url, e);
+      continue;
+    }
+  }
+  statusEl.innerHTML='<span style="font-size:1rem;font-weight:800;color:#f87171">✗ Sheets no accesible</span> — <a href="https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit" target="_blank" style="color:var(--pink);text-decoration:underline;font-weight:700">revisar permisos</a> — usando datos demo<br><span style="font-size:.8rem;color:var(--muted)">Ya está: Compartir → Cualquiera con link (Lector) ✓ pero falta: Archivo → Compartir → <b>Publicar en la web</b> → Hoja RAW_TRABAJOS → <b>Valores separados por comas (.csv)</b> → Publicar</span>';
+  statusEl.style.background='rgba(239,68,68,.1)';
+  statusEl.style.border='1px solid rgba(239,68,68,.3)';
+  statusEl.style.padding='10px 14px';
+  statusEl.style.borderRadius='12px';
+  if(btn) btn.innerHTML='↻ Reintentar';
+  document.getElementById('dataSource').textContent=`Datos embebidos (${JOBS.length})`;
+  if(btn) btn.disabled=false;
+  if(showToastOnSuccess) showToast('No se pudo sincronizar — revisa permisos de Sheets');
+}
+
+let currentPage = 1;
+const perPage = 20;
+let sortKey = 'score', sortDir = -1;
+let topSortKey='score', topSortDir=-1;
+
+const fmtARS = n => '$'+n.toLocaleString('es-AR')+' ARS';
+const fmtSalary = (j)=>{
+  if(j.salary_currency==='USD' && j.salary_usd_monthly){
+    return '<span class="salary usd">USD '+j.salary_usd_monthly.toLocaleString('es-AR')+'<small style="font-weight:400;color:var(--muted)">/mes</small></span><div style="font-size:.72rem;color:var(--muted)">≈ '+fmtARS(j.salary_ars)+' </div>';
+  }
+  return '<span class="salary">'+j.salary_formatted+'<small style="font-weight:400;color:var(--muted)"> ARS</small></span>';
+};
+const fmt = n => '$'+n.toLocaleString('es-AR');
+
+function updateKpis(){
+  const n = JOBS.length;
+  const high = JOBS.filter(j=>j.score>=90).length;
+  const mid = JOBS.filter(j=>j.score>=70 && j.score<90).length;
+  const remote = JOBS.filter(j=>j.modalidad==='Remote').length;
+  const ar = JOBS.filter(j=> (j.ubicacion||'').toLowerCase().includes('argentina') || (j.ubicacion||'').toLowerCase().includes('latam') || (j.ubicacion||'').toLowerCase().includes('latin')).length;
+  const avg = Math.round(JOBS.reduce((a,j)=>a+j.salary_ars,0)/n);
+  const med = [...JOBS].sort((a,b)=>a.salary_ars-b.salary_ars)[Math.floor(n/2)].salary_ars;
+  const avgHigh = Math.round(JOBS.filter(j=>j.score>=90).reduce((a,j)=>a+j.salary_ars,0)/Math.max(1,high));
+  const avgRest = Math.round(JOBS.filter(j=>j.score<90).reduce((a,j)=>a+j.salary_ars,0)/Math.max(1,n-high));
+  const premium = ((avgHigh/avgRest-1)*100).toFixed(0);
+  document.getElementById('kpiTotal').textContent=n;
+  document.getElementById('kpiTop').textContent=high;
+  document.getElementById('kpiMid').textContent=mid;
+  document.getElementById('kpiRemote').textContent=remote;
+  document.getElementById('kpiRemoteSub').textContent=(remote/n*100).toFixed(1)+'% · LATAM-friendly';
+  document.getElementById('kpiAR').textContent=ar;
+  document.getElementById('heroScore').innerHTML= high+' <small>/ '+n+' · '+(high/n*100).toFixed(1)+'%</small>';
+  document.getElementById('heroRemotePct').textContent=(remote/n*100).toFixed(0)+'% Remote';
+  document.getElementById('heroAvgHigh').textContent=fmt(avgHigh);
+  document.getElementById('heroAvgRest').textContent=fmt(avgRest);
+  document.getElementById('heroSalaryPremium').textContent='+'+premium+'% vs resto';
+  document.getElementById('mini90').textContent=high;
+  document.getElementById('mini80').textContent=JOBS.filter(j=>j.score>=80&&j.score<90).length;
+  document.getElementById('mini70').textContent=JOBS.filter(j=>j.score>=70&&j.score<80).length;
+  document.getElementById('mini60').textContent=JOBS.filter(j=>j.score>=60&&j.score<70).length;
+  document.getElementById('miniAvg').textContent=fmt(avg);
+  document.getElementById('miniMed').textContent=fmt(med);
+}
+
+function buildSkillFilter(){
+  const c={}; JOBS.forEach(j=>(j.skills||[]).forEach(s=>c[s]=(c[s]||0)+1));
+  const sel=document.getElementById('fSkill');
+  sel.innerHTML='<option value="">Todas</option>';
+  Object.entries(c).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{
+    const o=document.createElement('option');o.value=k;o.textContent=k+' ('+v+')';sel.appendChild(o);
+  });
+}
+
+// --- click-to-filter state ---
+let activeBucket = null; // {lo,hi,label}
+let activeCompany = null;
+let activeLocation = null;
+let activeSkillFromChart = null;
+
+function showToast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t=setTimeout(()=>el.classList.remove('show'),2200);
+}
+function scrollToTables(){
+  document.querySelector('.table-wrap').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function updateActiveChips(){
+  const c=document.getElementById('activeFilters');
+  const chips=[];
+  if(activeBucket) chips.push({label:'Score: '+activeBucket.label, clear:()=>{activeBucket=null; document.getElementById('fScore').value='0'}});
+  if(activeCompany) chips.push({label:'Empresa: '+activeCompany, clear:()=>{activeCompany=null; document.getElementById('q').value=''}});
+  if(activeLocation) chips.push({label:'Ubicación: '+activeLocation, clear:()=>{activeLocation=null; document.getElementById('q').value=''}});
+  if(activeSkillFromChart) chips.push({label:'Skill: '+activeSkillFromChart, clear:()=>{activeSkillFromChart=null; document.getElementById('fSkill').value=''}});
+  // also reflect native selects that are not from chart clicks
+  const fSkillVal=document.getElementById('fSkill').value;
+  const fModVal=document.getElementById('fMod').value;
+  const qVal=document.getElementById('q').value.trim();
+  if(fSkillVal && fSkillVal!==activeSkillFromChart) chips.push({label:'Skill: '+fSkillVal, clear:()=>{document.getElementById('fSkill').value=''; activeSkillFromChart=null}});
+  if(fModVal) chips.push({label:'Modalidad: '+fModVal, clear:()=>{document.getElementById('fMod').value=''}});
+  if(qVal && qVal!==activeCompany && qVal!==activeLocation) chips.push({label:'Búsqueda: '+qVal, clear:()=>{document.getElementById('q').value=''}});
+  if(!chips.length){ c.classList.remove('show'); c.innerHTML=''; return; }
+  c.classList.add('show');
+  c.innerHTML = chips.map((ch,i)=>'<span class="chip">'+ch.label+' <button onclick="clearChip('+i+')" title="Quitar">×</button></span>').join('') + '<button class="btn btn-ghost" style="margin-left:8px;padding:5px 10px;font-size:.78rem" onclick="resetFilters()">Limpiar todo ✕</button>';
+  c._chips = chips;
+}
+function clearChip(i){
+  const ch=document.getElementById('activeFilters')._chips[i];
+  if(ch) ch.clear();
+  applyFilters();
+}
+function highlightCard(id, on){
+  document.querySelectorAll('.card').forEach(el=>el.classList.remove('has-filter'));
+  if(on && id) document.getElementById(id)?.classList.add('has-filter');
+}
+function clearAllFiltersSingle(){
+  activeBucket=null; activeCompany=null; activeLocation=null; activeSkillFromChart=null;
+  document.getElementById('fScore').value='0';
+  document.getElementById('fMod').value='';
+  document.getElementById('fSkill').value='';
+  document.getElementById('q').value='';
+  document.querySelectorAll('.card').forEach(el=>el.classList.remove('has-filter'));
+}
+
+let charts=[];
+function renderCharts(){
+  charts.forEach(ch=>ch.destroy()); charts=[];
+  Chart.defaults.color='#94a3b8'; Chart.defaults.borderColor='#334155';
+  const buckets={'60-69':0,'70-79':0,'80-89':0,'90-100':0};
+  JOBS.forEach(j=>{
+    if(j.score>=90) buckets['90-100']++;
+    else if(j.score>=80) buckets['80-89']++;
+    else if(j.score>=70) buckets['70-79']++;
+    else buckets['60-69']++;
+  });
+  const bucketLabels=Object.keys(buckets);
+  const bucketOnClick=(e,els,chart)=>{
+    if(!els.length) return;
+    const label=chart.data.labels[els[0].index];
+    const [lo,hi]=label.split('-').map(Number);
+    const isSame = activeBucket && activeBucket.label===label;
+    clearAllFiltersSingle();
+    if(isSame){ showToast('Filtro Score quitado'); applyFilters(); return; }
+    activeBucket={lo,hi,label}; document.getElementById('fScore').value=String(lo);
+    showToast('Filtrado: Score '+label+' ('+buckets[label]+' jobs)');
+    highlightCard(chart.canvas.id==='scoreChart'?'card-score':'card-salary', true);
+    applyFilters(); scrollToTables();
+  };
+  charts.push(new Chart(document.getElementById('scoreChart'),{type:'bar',data:{labels:bucketLabels,datasets:[{data:Object.values(buckets),backgroundColor:['#f59e0b','#3b82f6','#22c55e','#f472b6'],borderRadius:8,hoverBackgroundColor:['#fbbf24','#60a5fa','#4ade80','#f9a8d4']}]},options:{responsive:true,onClick:bucketOnClick,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'#1e293b'},ticks:{precision:0}}}}}));
+  // salary by bucket
+  const avgByBucket={};
+  for(const k of Object.keys(buckets)){
+    const [lo,hi]=k.split('-').map(Number);
+    const vals=JOBS.filter(j=>j.score>=lo && j.score<=hi).map(j=>j.salary_ars);
+    avgByBucket[k]= vals.length? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):0;
+  }
+  charts.push(new Chart(document.getElementById('salaryChart'),{type:'bar',data:{labels:Object.keys(avgByBucket),datasets:[{label:'Avg ARS',data:Object.values(avgByBucket),backgroundColor:'#06b6d4',hoverBackgroundColor:'#22d3ee',borderRadius:8}]},options:{responsive:true,onClick:bucketOnClick,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmt(ctx.raw)}}},scales:{x:{grid:{display:false}},y:{grid:{color:'#1e293b'},ticks:{callback:v=>'$'+(v/1000000).toFixed(1)+'M'}}}}}));
+  // skills
+  const sc={}; JOBS.forEach(j=>(j.skills||[]).forEach(s=>sc[s]=(sc[s]||0)+1));
+  const topS=Object.entries(sc).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const skillLabels=topS.map(s=>s[0]);
+  charts.push(new Chart(document.getElementById('skillsChart'),{type:'bar',data:{labels:skillLabels,datasets:[{data:topS.map(s=>s[1]),backgroundColor:'#8b5cf6',hoverBackgroundColor:'#a78bfa',borderRadius:8}]},options:{indexAxis:'y',responsive:true,onClick:(e,els,chart)=>{
+    if(!els.length) return;
+    const label=chart.data.labels[els[0].index];
+    const isSame = activeSkillFromChart===label;
+    clearAllFiltersSingle();
+    if(isSame){ showToast('Filtro Skill quitado'); applyFilters(); return; }
+    activeSkillFromChart=label; document.getElementById('fSkill').value=label;
+    showToast('Filtrado: Skill '+label); highlightCard('card-skills',true);
+    applyFilters(); scrollToTables();
+  },plugins:{legend:{display:false}},scales:{x:{grid:{color:'#1e293b'},ticks:{precision:0}},y:{grid:{display:false}}}}}));
+  // companies
+  const cc={}; JOBS.forEach(j=>cc[j.empresa]=(cc[j.empresa]||0)+1);
+  const topC=Object.entries(cc).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const companyLabels=topC.map(c=>c[0]);
+  const companyDisplay=topC.map(c=>c[0].length>22?c[0].slice(0,22)+'…':c[0]);
+  charts.push(new Chart(document.getElementById('companyChart'),{type:'bar',data:{labels:companyDisplay,datasets:[{data:topC.map(c=>c[1]),backgroundColor:'#f472b6',hoverBackgroundColor:'#f9a8d4',borderRadius:8}]},options:{indexAxis:'y',responsive:true,onClick:(e,els)=>{
+    if(!els.length) return;
+    const label=companyLabels[els[0].index];
+    const isSame = activeCompany===label;
+    clearAllFiltersSingle();
+    if(isSame){ showToast('Filtro Empresa quitado'); applyFilters(); return; }
+    activeCompany=label; document.getElementById('q').value=label;
+    showToast('Filtrado: Empresa '+label); highlightCard('card-company',true);
+    applyFilters(); scrollToTables();
+  },plugins:{legend:{display:false}},scales:{x:{grid:{color:'#1e293b'},ticks:{precision:0}},y:{grid:{display:false}}}}}));
+  // modality
+  const mc={}; JOBS.forEach(j=>mc[j.modalidad]=(mc[j.modalidad]||0)+1);
+  const modLabels=Object.keys(mc);
+  charts.push(new Chart(document.getElementById('modalityChart'),{type:'doughnut',data:{labels:modLabels,datasets:[{data:Object.values(mc),backgroundColor:['#3b82f6','#f59e0b','#22c55e'],hoverBackgroundColor:['#60a5fa','#fbbf24','#4ade80'],borderWidth:0}]},options:{responsive:true,onClick:(e,els,chart)=>{
+    if(!els.length) return;
+    const label=chart.data.labels[els[0].index];
+    const cur=document.getElementById('fMod').value;
+    const isSame = cur===label;
+    clearAllFiltersSingle();
+    if(isSame){ showToast('Filtro Modalidad quitado'); applyFilters(); return; }
+    document.getElementById('fMod').value=label;
+    showToast('Filtrado: Modalidad '+label); highlightCard('card-modality',true);
+    applyFilters(); scrollToTables();
+  },plugins:{legend:{position:'right',labels:{color:'#94a3b8',boxWidth:12}}},cutout:'58%'}}));
+  // location
+  const lc={}; JOBS.forEach(j=>lc[j.ubicacion]=(lc[j.ubicacion]||0)+1);
+  const topL=Object.entries(lc).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const locLabels=topL.map(l=>l[0]);
+  const locDisplay=topL.map(l=>l[0].length>24?l[0].slice(0,24)+'…':l[0]);
+  charts.push(new Chart(document.getElementById('locationChart'),{type:'bar',data:{labels:locDisplay,datasets:[{data:topL.map(l=>l[1]),backgroundColor:'#22c55e',hoverBackgroundColor:'#4ade80',borderRadius:8}]},options:{responsive:true,onClick:(e,els)=>{
+    if(!els.length) return;
+    const label=locLabels[els[0].index];
+    const isSame = activeLocation===label;
+    clearAllFiltersSingle();
+    if(isSame){ showToast('Filtro Ubicación quitado'); applyFilters(); return; }
+    activeLocation=label; document.getElementById('q').value=label;
+    showToast('Filtrado: Ubicación '+label); highlightCard('card-location',true);
+    applyFilters(); scrollToTables();
+  },plugins:{legend:{display:false}},scales:{x:{ticks:{maxRotation:30},grid:{display:false}},y:{grid:{color:'#1e293b'},ticks:{precision:0}}}}}));
+  // radar Yanaina vs market
+  const yanaina={Leadership:9,'Project Manager':9,Marketing:9,'Digital Marketing':8,'Agile/Scrum':7,'Scrum Master':7,English:8,'Data Analyst':2,'SEO/SEM':2,Analytics:2};
+  const labels=['Leadership','Project Manager','Marketing','Digital Marketing','Agile/Scrum','Scrum Master','English','Data Analyst','SEO/SEM','Analytics'];
+  const market=labels.map(l=> sc[l]? (sc[l]/JOBS.length*10):0.2);
+  const yana=labels.map(l=> yanaina[l]||0);
+  charts.push(new Chart(document.getElementById('radarChart'),{type:'radar',data:{labels,datasets:[{label:'Yanaina',data:yana,borderColor:'#f472b6',backgroundColor:'rgba(244,114,182,.18)',pointBackgroundColor:'#f472b6'},{label:'Mercado (demanda)',data:market,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.12)',pointBackgroundColor:'#3b82f6'}]},options:{responsive:true,onClick:(e,els,chart)=>{
+    if(!els.length) return;
+    const idx=els[0].index;
+    const label=chart.data.labels[idx];
+    const isSame = activeSkillFromChart===label;
+    clearAllFiltersSingle();
+    if(isSame){ showToast('Filtro Skill quitado'); applyFilters(); return; }
+    activeSkillFromChart=label; document.getElementById('fSkill').value=label;
+    showToast('Filtrado: Skill '+label); highlightCard('card-radar',true);
+    applyFilters(); scrollToTables();
+  },scales:{r:{grid:{color:'#334155'},angleLines:{color:'#334155'},pointLabels:{color:'#cbd5e1',font:{size:10}},ticks:{display:false,min:0,max:10}}},plugins:{legend:{labels:{color:'#94a3b8'}}}}}));
+  // gap chart - horizontal bar of gap size
+  const gaps=[['Data Analyst',sc['Data Analyst']||0],['SEO/SEM',sc['SEO/SEM']||0],['Analytics',sc['Analytics']||0],['SQL',sc['SQL']||0]];
+  const gapLabels=gaps.map(g=>g[0]);
+  charts.push(new Chart(document.getElementById('gapChart'),{type:'bar',data:{labels:gapLabels,datasets:[{label:'Jobs que lo piden',data:gaps.map(g=>g[1]),backgroundColor:['#ef4444','#f59e0b','#3b82f6','#8b5cf6'],hoverBackgroundColor:['#f87171','#fbbf24','#60a5fa','#a78bfa'],borderRadius:8}]},options:{indexAxis:'y',responsive:true,onClick:(e,els,chart)=>{
+    if(!els.length) return;
+    const label=chart.data.labels[els[0].index];
+    const isSame = activeSkillFromChart===label;
+    clearAllFiltersSingle();
+    if(isSame){ showToast('Filtro Skill quitado'); applyFilters(); return; }
+    activeSkillFromChart=label; document.getElementById('fSkill').value=label;
+    showToast('Filtrado: Gap '+label); highlightCard('card-gap',true);
+    applyFilters(); scrollToTables();
+  },plugins:{legend:{display:false}},scales:{x:{grid:{color:'#1e293b'},ticks:{precision:0}},y:{grid:{display:false}}}}}));
+}
+
+function scoreBadge(s){
+  const cls=s>=90?'s-high':s>=70?'s-mid':'s-low';
+  return '<span class="badge-score '+cls+'">'+s+'</span>';
+}
+function skillsTags(arr){
+  if(!arr||!arr.length) return '<span style="color:#64748b;font-size:.78rem">— sin tags</span>';
+  return arr.map(s=>'<span class="tag">'+s+'</span>').join('');
+}
+
+function renderTop(){
+  let top=[...JOBS].filter(j=>j.score>=90);
+  top.sort((a,b)=>{
+    const va=a[topSortKey], vb=b[topSortKey];
+    if(va===vb) return b.salary_ars - a.salary_ars;
+    return topSortDir * ( (va>vb?1:-1) );
+  });
+  document.getElementById('topCount').textContent=top.length;
+  document.getElementById('topTable').innerHTML = top.map((j,i)=>
+    '<tr><td style="color:var(--muted)">'+(i+1)+'</td><td>'+scoreBadge(j.score)+'</td><td><div style="font-weight:600">'+j.titulo+'</div><div style="font-size:.78rem;color:var(--muted)">'+skillsTags(j.skills)+(j.salary_notes_usd?' <span style="background:#facc15;color:#0f172a;padding:1px 5px;border-radius:999px;font-size:.68rem;font-weight:700">USD</span>':'')+'</div></td><td>'+j.empresa+'</td><td style="font-size:.82rem">'+j.ubicacion+'<div style="color:var(--muted)">'+j.modalidad+'</div></td><td>'+fmtSalary(j)+'</td><td><a href="'+j.url+'" target="_blank" rel="noopener">Ver ↗</a></td></tr>'
+  ).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">Sin resultados High Fit con filtros actuales</td></tr>';
+}
+function sortTop(k){ if(topSortKey===k) topSortDir*=-1; else{topSortKey=k; topSortDir=k==='score'?-1:-1} renderTop(); }
+
+function getFiltered(){
+  return filtered;
+}
+
+function renderAll(){
+  const total = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(total / perPage));
+  if(currentPage>totalPages) currentPage=totalPages;
+  // sort filtered copy for display
+  let sorted=[...filtered];
+  sorted.sort((a,b)=>{
+    const va=a[sortKey], vb=b[sortKey];
+    if(va===vb) return 0;
+    return sortDir * (va>vb?1:-1);
+  });
+  const start=(currentPage-1)*perPage;
+  const page=sorted.slice(start,start+perPage);
+  document.getElementById('allTable').innerHTML = page.map((j,i)=>
+    '<tr style="'+(newJobIds.has(j.job_id)?'background:rgba(34,197,94,.08);outline:1px solid rgba(34,197,94,.3)':'')+'"><td style="color:var(--muted)">'+(start+i+1)+'</td><td>'+scoreBadge(j.score)+(newJobIds.has(j.job_id)?' <span style="background:#22c55e;color:white;padding:1px 6px;border-radius:999px;font-size:.65rem;font-weight:800;vertical-align:middle">NUEVO</span>':'')+'</td><td><div style="font-weight:600">'+j.titulo+'</div><div style="font-size:.78rem;color:var(--muted)">'+skillsTags(j.skills)+(j.salary_notes_usd?' <span style="background:#facc15;color:#0f172a;padding:1px 5px;border-radius:999px;font-size:.68rem;font-weight:700">USD</span>':'')+'</div></td><td>'+j.empresa+'</td><td style="font-size:.82rem">'+j.ubicacion+'<div style="color:var(--muted)">'+j.modalidad+'</div></td><td>'+fmtSalary(j)+'</td><td><a href="'+j.url+'" target="_blank" rel="noopener">Ver ↗</a></td></tr>'
+  ).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">Sin resultados con filtros actuales</td></tr>';
+  document.getElementById('totalCount').textContent=filtered.length+' / '+JOBS.length;
+  document.getElementById('pageInfo').textContent='Pág '+currentPage+'/'+totalPages+' · '+total+' resultados';
+  document.getElementById('filterInfo').textContent='Mostrando '+page.length+' de '+total+' (pág '+currentPage+'/'+totalPages+')';
+  let pag='';
+  pag+='<button '+(currentPage===1?'disabled':'')+' onclick="goPage('+(currentPage-1)+')">← Prev</button>';
+  const maxBtns=6; let s=Math.max(1,currentPage-2), e=Math.min(totalPages, s+maxBtns-1); if(e-s<maxBtns-1) s=Math.max(1,e-maxBtns+1);
+  for(let i=s;i<=e;i++) pag+='<button class="'+(i===currentPage?'active':'')+'" onclick="goPage('+i+')">'+i+'</button>';
+  pag+='<button '+(currentPage===totalPages?'disabled':'')+' onclick="goPage('+(currentPage+1)+')">Next →</button>';
+  document.getElementById('pagination').innerHTML=pag;
+}
+function goPage(p){ currentPage=p; renderAll(); window.scrollTo({top: document.getElementById('allTable').getBoundingClientRect().top + window.scrollY - 120, behavior:'smooth'}); }
+function sortAll(k){ if(sortKey===k) sortDir*=-1; else{sortKey=k; sortDir=-1} renderAll(); }
+
+function applyFilters(){
+  const q=document.getElementById('q').value.toLowerCase().trim();
+  const minScore=Number(document.getElementById('fScore').value);
+  const mod=document.getElementById('fMod').value;
+  const skill=document.getElementById('fSkill').value;
+  filtered = JOBS.filter(j=>{
+    // bucket from chart click has priority over dropdown
+    if(activeBucket){
+      if(j.score < activeBucket.lo || j.score > activeBucket.hi) return false;
+    } else if(j.score < minScore) return false;
+    if(mod && j.modalidad!==mod) return false;
+    // skill from chart or dropdown - union but skill dropdown already synced
+    const effectiveSkill = skill || activeSkillFromChart || '';
+    if(effectiveSkill && !(j.skills||[]).includes(effectiveSkill)) return false;
+    // company/location via q hijack - but also check explicit activeCompany/Location
+    if(activeCompany && !j.empresa.toLowerCase().includes(activeCompany.toLowerCase())) return false;
+    if(activeLocation && !j.ubicacion.toLowerCase().includes(activeLocation.toLowerCase())) return false;
+    if(q){
+      // if q equals activeCompany/Location, already filtered, but still need to match
+      const hay=(j.titulo+' '+j.empresa+' '+j.ubicacion+' '+(j.skills||[]).join(' ')+' '+j.notas).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  currentPage=1; renderTop(); renderAll();
+  // sync highlights
+  highlightCard('card-score', !!activeBucket);
+  highlightCard('card-salary', !!activeBucket);
+  highlightCard('card-skills', !!activeSkillFromChart || !!document.getElementById('fSkill').value);
+  highlightCard('card-company', !!activeCompany);
+  highlightCard('card-location', !!activeLocation);
+  highlightCard('card-modality', !!document.getElementById('fMod').value);
+  highlightCard('card-radar', !!activeSkillFromChart);
+  highlightCard('card-gap', !!activeSkillFromChart);
+  updateActiveChips();
+}
+function resetFilters(){
+  document.getElementById('q').value='';document.getElementById('fScore').value='0';document.getElementById('fMod').value='';document.getElementById('fSkill').value='';
+  activeBucket=null; activeCompany=null; activeLocation=null; activeSkillFromChart=null;
+  document.querySelectorAll('.card').forEach(el=>el.classList.remove('has-filter'));
+  filtered=[...JOBS]; currentPage=1; renderTop(); renderAll(); updateActiveChips();
+  showToast('Filtros limpiados');
+}
+// single-filter: dropdown changes clear chart filters and other dropdowns
+function handleFilterChange(source){
+  // clear chart actives
+  activeBucket=null; activeCompany=null; activeLocation=null; activeSkillFromChart=null;
+  document.querySelectorAll('.card').forEach(el=>el.classList.remove('has-filter'));
+  // make exclusive: keep only source, clear others
+  const qEl=document.getElementById('q');
+  const fScoreEl=document.getElementById('fScore');
+  const fModEl=document.getElementById('fMod');
+  const fSkillEl=document.getElementById('fSkill');
+  if(source!=='q') qEl.value='';
+  if(source!=='fScore') fScoreEl.value='0';
+  if(source!=='fMod') fModEl.value='';
+  if(source!=='fSkill') fSkillEl.value='';
+  applyFilters();
+}
+document.getElementById('q').addEventListener('keydown',e=>{ if(e.key==='Enter'){ handleFilterChange('q'); }});
+document.getElementById('fScore').addEventListener('change',()=>handleFilterChange('fScore'));
+document.getElementById('fMod').addEventListener('change',()=>handleFilterChange('fMod'));
+document.getElementById('fSkill').addEventListener('change',()=>handleFilterChange('fSkill'));
+// also add input clear on typing? keep single
+function handleManualFilter(){
+  const q=document.getElementById('q').value.trim();
+  const fScore=document.getElementById('fScore').value;
+  const fMod=document.getElementById('fMod').value;
+  const fSkill=document.getElementById('fSkill').value;
+  // count active
+  const actives = [];
+  if(q) actives.push('q');
+  if(fScore!=='0') actives.push('fScore');
+  if(fMod) actives.push('fMod');
+  if(fSkill) actives.push('fSkill');
+  if(actives.length<=1){ applyFilters(); return; }
+  // multiple: keep last changed? we keep q > fSkill > fMod > fScore priority
+  let keep = actives[actives.length-1];
+  // if q present, q wins
+  if(q) keep='q';
+  else if(fSkill) keep='fSkill';
+  else if(fMod) keep='fMod';
+  else keep='fScore';
+  handleFilterChange(keep);
+}
+document.getElementById('q').addEventListener('input',()=>{
+  if(document.getElementById('q').value===''){
+    // if cleared, just refresh
+  }
+});
+
+// init
+updateKpis(); buildSkillFilter(); renderCharts(); renderTop(); renderAll(); updateActiveChips();
+// auto-restaurar link pegado + intentar Sheets
+restoreCustomSheet();
+if(!localStorage.getItem('custom_sheet_id')) loadFromSheet(false);
+</script>
+</body>
+</html>
