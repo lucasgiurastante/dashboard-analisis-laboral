@@ -445,32 +445,82 @@ function updateDynamicInsights(){
     const h3=radarCard.querySelector('h3');
     if(h3) h3.innerHTML=`${name} vs Mercado <span>Radar 0-10</span> <span class="hint">click skill para filtrar</span>`;
   }
-  // hero kicker
+  // hero kicker + desc
   const kicker=document.querySelector('.hero-kicker');
+  const heroDesc=document.querySelector('.hero-desc');
   if(kicker && userProfile?.name) kicker.textContent=`ANÁLISIS PARA ${userProfile.name}`;
   else if(kicker && !userProfile) kicker.textContent='GENÉRICO · PEGÁ TU CV';
-  // recs dinámicos
+  if(heroDesc && userProfile?.name){
+    const high=JOBS.filter(j=>j.score>=90).length;
+    heroDesc.innerHTML=`Hola <b>${userProfile.name}</b> — ${high} de ${JOBS.length} ofertas son <b>alta compatibilidad</b> para tu perfil (${[...userSkills].slice(0,3).join(', ') || 'sin skills'}). Priorizá esas.`;
+  }
+  // recs dinámicos - basados en TODO el mercado, no solo top 6
   const sc={}; JOBS.forEach(j=>(j.skills||[]).forEach(s=>sc[s]=(sc[s]||0)+1));
-  const topMarket=Object.entries(sc).sort((a,b)=>b[1]-a[1]).slice(0,6);
-  const gaps=topMarket.filter(([s])=>!userSkills.has(s)).slice(0,3);
-  const strengths=topMarket.filter(([s])=>userSkills.has(s)).slice(0,3);
+  const allMarket=Object.entries(sc).sort((a,b)=>b[1]-a[1]);
+  const topMarket=allMarket.slice(0,6);
+  // gaps: todas las skills que no tenés, ordenadas por demanda
+  const gapsAll=allMarket.filter(([s])=>!userSkills.has(s));
+  const gaps=gapsAll.slice(0,3);
+  const strengths=allMarket.filter(([s])=>userSkills.has(s)).slice(0,3);
+  // IMPORTANTE: secundarias (inglés, Jira, Tableau) si faltan
+  const secondary=['English','Jira/Asana','Tableau/Power BI','SQL'];
+  const secondaryGaps=secondary.filter(s=>!userSkills.has(s) && sc[s]).map(s=>[s, sc[s]||0]);
+  // si no hay secondary, usar gapsAll 3-6
+  const importanteGaps = secondaryGaps.length? secondaryGaps.slice(0,3) : gapsAll.slice(3,6);
+
   const urgentEl=document.querySelector('.rec.urgent ul');
+  const warnEl=document.querySelector('.rec.warn ul');
   const goodEl=document.querySelector('.rec.good ul');
   if(urgentEl){
-    if(gaps.length) urgentEl.innerHTML=gaps.map(([s,c])=>`<li>${s} — ${c} jobs (${(c/JOBS.length*100).toFixed(1)}%) ${!userSkills.has(s)?'🔴 gap':''}</li>`).join('');
-    else urgentEl.innerHTML='<li style="color:var(--green)">¡Sin gaps críticos! Tu perfil cubre el top del mercado</li>';
-    urgentEl.nextElementSibling.textContent=userProfile? `Basado en CV de ${name}: ${gaps.length? gaps.map(g=>g[0]).join(', ') +' a cerrar' : 'perfil completo'}` : urgentEl.nextElementSibling.textContent;
+    if(userProfile && gaps.length){
+      urgentEl.innerHTML=gaps.map(([s,c])=>`<li>${s} — ${c} jobs (${(c/JOBS.length*100).toFixed(1)}%) 🔴 gap para ${name}</li>`).join('');
+    } else if(!userProfile){
+      urgentEl.innerHTML=allMarket.slice(0,3).map(([s,c])=>`<li>${s} — ${c} jobs (${(c/JOBS.length*100).toFixed(1)}%)</li>`).join('');
+    } else {
+      urgentEl.innerHTML='<li style="color:var(--green)">¡Sin gaps críticos! Tu perfil cubre el top del mercado</li>';
+    }
+    const actionEl=urgentEl.nextElementSibling;
+    if(actionEl){
+      if(userProfile) actionEl.textContent=`Basado en CV de ${name}: cerrar ${gaps.map(g=>g[0]).join(', ') || '—'} te abre ${gaps.reduce((a,[,c])=>a+c,0)} jobs extra`;
+      else actionEl.textContent='Cargá tu CV para ver tus gaps personales';
+    }
+  }
+  if(warnEl){
+    if(userProfile && importanteGaps.length){
+      warnEl.innerHTML=importanteGaps.map(([s,c])=>`<li>${s} — ${c? c+' jobs':''} ${!userSkills.has(s)?'🟡 a potenciar':''}</li>`).join('');
+      const actionEl=warnEl.nextElementSibling;
+      if(actionEl) actionEl.textContent=`Para ${name}: agregar ${importanteGaps.map(g=>g[0]).join(', ')} a tu CV si los tenés`;
+    } else if(!userProfile){
+      // keep generic
+    }
   }
   if(goodEl){
-    if(strengths.length) goodEl.innerHTML=strengths.map(([s,c])=>`<li>${s} — ${c} jobs (${(c/JOBS.length*100).toFixed(1)}%) ✓ tenés</li>`).join('');
-    else if(userProfile) goodEl.innerHTML='<li>No coinciden top skills — revisá tu CV o agregá sinónimos</li>';
+    if(userProfile && strengths.length){
+      goodEl.innerHTML=strengths.map(([s,c])=>`<li>${s} — ${c} jobs (${(c/JOBS.length*100).toFixed(1)}%) ✓ tenés</li>`).join('');
+      const actionEl=goodEl.nextElementSibling;
+      if(actionEl) actionEl.innerHTML=`Para <b>${name}</b>: destacá <b>${strengths.map(s=>s[0]).join(' · ')}</b> en tu titular — matchea ${(strengths[0][1]/JOBS.length*100).toFixed(0)}% del mercado`;
+    } else if(userProfile){
+      goodEl.innerHTML='<li>No coinciden top skills — revisá tu CV o agregá sinónimos (ej: Project Manager, Leadership)</li>';
+    } else {
+      goodEl.innerHTML=allMarket.slice(0,3).map(([s,c])=>`<li>${s} — ${c} jobs (${(c/JOBS.length*100).toFixed(1)}%)</li>`).join('');
+    }
   }
   // insights de cada card
   const insights=document.querySelectorAll('.insight');
-  // score insight personalizado
   const high=JOBS.filter(j=>j.score>=90).length;
   if(insights[0]) insights[0].innerHTML=`<b>${name}:</b> ${high} High Fit (${(high/JOBS.length*100).toFixed(1)}%) con tu perfil. ${userProfile? 'Priorizá esos.' : 'Cargá tu CV para ver tu High Fit real.'}`;
-  if(insights[2] && userSkills.size) insights[2].innerHTML=`<b>${name}:</b> Tenés ${[...userSkills].slice(0,3).join(', ')} — Mercado pide ${topMarket.slice(0,3).map(t=>t[0]).join(', ')}. ${gaps.length? 'Gap: '+gaps[0][0] : 'Cobertura alta'}`;
+  if(insights[2]){
+    if(userProfile && userSkills.size) insights[2].innerHTML=`<b>${name}:</b> Tenés ${[...userSkills].slice(0,3).join(', ') || '—'} — Mercado pide ${allMarket.slice(0,3).map(t=>t[0]).join(', ')}. ${gaps.length? 'Tu mayor gap: '+gaps[0][0]+' ('+gaps[0][1]+' jobs)' : 'Cobertura alta'}`;
+    else insights[2].innerHTML=`<b>Mercado:</b> Top skills ${allMarket.slice(0,3).map(t=>t[0]+' ('+t[1]+')').join(', ')} — cargá tu CV para tu gap`;
+  }
+  if(insights[6]){
+    if(userProfile) insights[6].innerHTML=`<b>${name}:</b> Tu perfil vs demanda. ${gaps.length? 'Brecha en '+gaps.slice(0,2).map(g=>g[0]).join(' y ') : 'Perfil alineado'}.`;
+    else insights[6].textContent='Cargá tu CV para ver tu radar personalizado';
+  }
+  if(insights[7]){
+    if(userProfile && gaps.length) insights[7].innerHTML=`<b>${name}:</b> Cerrar ${gaps.slice(0,2).map(g=>g[0]).join(' + ')} te abre ${gaps.slice(0,2).reduce((a,[,c])=>a+c,0)} jobs extra.`;
+    else if(!userProfile) insights[7].textContent='Cargá tu CV para ver tus gaps';
+  }
 }
 function recomputeAllScores(){
   JOBS.forEach(j=>{
