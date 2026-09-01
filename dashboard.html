@@ -383,7 +383,24 @@ async function handleCVFile(input){
       if(window['pdfjsLib']) pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
       const buf=await file.arrayBuffer();
       const pdf=await pdfjsLib.getDocument({data:buf}).promise;
-      for(let i=1;i<=pdf.numPages;i++){ const page=await pdf.getPage(i); const c=await page.getTextContent(); text+=c.items.map(it=>it.str).join(' ')+'\n'; }
+      for(let i=1;i<=pdf.numPages;i++){ 
+        const page=await pdf.getPage(i); 
+        const c=await page.getTextContent(); 
+        // Preserve line breaks by sorting items by Y position
+        const items = c.items.sort((a,b)=> (b.transform?b.transform[5]:0) - (a.transform?a.transform[5]:0));
+        let lastY = null;
+        let line = '';
+        for(const it of items){
+          const y = it.transform? it.transform[5] : 0;
+          if(lastY !== null && Math.abs(y - lastY) > 10){
+            text += line + '\n';
+            line = '';
+          }
+          line += it.str + ' ';
+          lastY = y;
+        }
+        text += line + '\n';
+      }
     } else if(file.name.endsWith('.docx')){
       const buf=await file.arrayBuffer();
       const res=await mammoth.extractRawText({arrayBuffer:buf});
