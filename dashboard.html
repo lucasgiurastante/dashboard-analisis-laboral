@@ -126,7 +126,7 @@ a{color:#5eead4;text-decoration:none}a:hover{text-decoration:underline}
   <div class="header">
     <div>
       <div class="h-title">Analizador <span>Propuestas Laborales</span> — Dashboard Genérico</div>
-      <div class="h-sub">Pegá tu Google Sheet y analizá cualquier búsqueda · Score PM/Marketing/Leadership · Un solo filtro activo · <span id="lastUpdate">31 ago 2026</span></div>
+      <div class="h-sub" id="hSub">Pegá tu Google Sheet y tu CV para análisis 100% personalizado · <span id="lastUpdate">—</span></div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
     <div class="badge"> <span style="width:8px;height:8px;background:var(--green);border-radius:50%;display:inline-block"></span> <strong id="heroRemotePct">93% Remote</strong> · <span id="dataSource">Datos embebidos</span></div>
@@ -193,36 +193,36 @@ a{color:#5eead4;text-decoration:none}a:hover{text-decoration:underline}
   <div class="hero">
     <div class="hero-main">
       <div class="hero-kicker">GENÉRICO · PEGÁ TU SHEET</div>
-      <div class="hero-value" id="heroScore">— <small>/ — · 21.2%</small></div>
+      <div class="hero-value" id="heroScore">— <small>/ —</small></div>
       <div class="hero-desc">1 de cada 5 ofertas es <b>alta compatibilidad</b>. Pegá tu Sheet arriba y priorizá High Fit al instante. Priorizar High Fit maximiza retorno por aplicación. El salario promedio High Fit es <b id="heroSalaryPremium" style="color:#5eead4">+56% vs resto</b>.</div>
       <div class="hero-stats">
-        <div class="pill">💰 High Fit avg <b id="heroAvgHigh">$2,712,545</b></div>
-        <div class="pill">📉 Resto avg <b id="heroAvgRest">$1,738,742</b></div>
+        <div class="pill">💰 High Fit avg <b id="heroAvgHigh">—</b></div>
+        <div class="pill">📉 Resto avg <b id="heroAvgRest">—</b></div>
         <div class="pill">🎯 Aplicar primero <b>Top 10 High Fit</b></div>
       </div>
     </div>
     <div class="hero-side">
       <div class="mini-card">
         <h4>DISTRIBUCIÓN POR SCORE</h4>
-        <div class="mini-row"><span>🟣 90-100 High</span><strong id="mini90">22</strong></div>
-        <div class="mini-row"><span>🟢 80-89 Mid-High</span><strong id="mini80">54</strong></div>
-        <div class="mini-row"><span>🔵 70-79 Mid</span><strong id="mini70">18</strong></div>
-        <div class="mini-row"><span>🟡 60-69 Low</span><strong id="mini60">12</strong></div>
+        <div class="mini-row"><span>🟣 90-100 High</span><strong id="mini90">—</strong></div>
+        <div class="mini-row"><span>🟢 80-89 Mid-High</span><strong id="mini80">—</strong></div>
+        <div class="mini-row"><span>🔵 70-79 Mid</span><strong id="mini70">—</strong></div>
+        <div class="mini-row"><span>🟡 60-69 Low</span><strong id="mini60">—</strong></div>
       </div>
       <div class="mini-card">
         <h4>SALARIO (ARS/mes)</h4>
-        <div class="mini-row"><span>Promedio global</span><strong id="miniAvg">$1,860,000</strong></div>
-        <div class="mini-row"><span>Mediana</span><strong id="miniMed">$1,754,078</strong></div>
+        <div class="mini-row"><span>Promedio global</span><strong id="miniAvg">—</strong></div>
+        <div class="mini-row"><span>Mediana</span><strong id="miniMed">—</strong></div>
         <div class="mini-row"><span>Top (Paired)</span><strong style="color:#5eead4">$3,508,200</strong></div>
       </div>
     </div>
   </div>
 
   <div class="kpis">
-    <div class="kpi"><div class="kpi-label">TOTAL JOBS</div><div class="kpi-value" id="kpiTotal">161</div><div class="kpi-sub">Dedup aplicado (1 dup removido)</div><div class="kpi-trend good">✓ Dataset limpio · 5 sin skills detectados</div></div>
-    <div class="kpi"><div class="kpi-label">HIGH FIT ≥ 90</div><div class="kpi-value" id="kpiTop" style="color:var(--green)">76</div><div class="kpi-sub">20.8% del total</div><div class="kpi-trend good">▲ Aplicar ya — mejor salario</div></div>
-    <div class="kpi"><div class="kpi-label">MID FIT 70-89</div><div class="kpi-value" id="kpiMid" style="color:var(--amber)">72</div><div class="kpi-sub">67.9% · backup sólido</div><div class="kpi-trend warn">→ Requiere filtro por salario</div></div>
-    <div class="kpi"><div class="kpi-label">REMOTE</div><div class="kpi-value" id="kpiRemote" style="color:var(--blue)">97</div><div class="kpi-sub" id="kpiRemoteSub">91.5% · LATAM-friendly</div><div class="kpi-trend good">✓ Sin restricción geográfica</div></div>
+    <div class="kpi"><div class="kpi-label">TOTAL JOBS</div><div class="kpi-value" id="kpiTotal">—</div><div class="kpi-sub">Dedup aplicado (1 dup removido)</div><div class="kpi-trend good">✓ Dataset limpio · 5 sin skills detectados</div></div>
+    <div class="kpi"><div class="kpi-label">HIGH FIT ≥ 90</div><div class="kpi-value" id="kpiTop" style="color:var(--green)">—</div><div class="kpi-sub">20.8% del total</div><div class="kpi-trend good">▲ Aplicar ya — mejor salario</div></div>
+    <div class="kpi"><div class="kpi-label">MID FIT 70-89</div><div class="kpi-value" id="kpiMid" style="color:var(--amber)">—</div><div class="kpi-sub">67.9% · backup sólido</div><div class="kpi-trend warn">→ Requiere filtro por salario</div></div>
+    <div class="kpi"><div class="kpi-label">REMOTE</div><div class="kpi-value" id="kpiRemote" style="color:var(--blue)">—</div><div class="kpi-sub" id="kpiRemoteSub">91.5% · LATAM-friendly</div><div class="kpi-trend good">✓ Sin restricción geográfica</div></div>
     <div class="kpi"><div class="kpi-label">AR / LATAM</div><div class="kpi-value" id="kpiAR" style="color:var(--violet)">—</div><div class="kpi-sub">Menciona Argentina/LATAM</div><div class="kpi-trend">Enfocar búsqueda LATAM</div></div>
   </div>
 
@@ -232,35 +232,35 @@ a{color:#5eead4;text-decoration:none}a:hover{text-decoration:underline}
     <div><label>MODALIDAD</label><select id="fMod"><option value="">Todas</option><option value="Remote">Remote</option><option value="Hybrid">Hybrid</option><option value="On-site">On-site</option></select></div>
     <div><label>SKILL</label><select id="fSkill"><option value="">Todas</option></select></div>
     <div style="display:flex;gap:8px;align-items:end"><button class="btn" onclick="handleManualFilter()">Filtrar</button><button class="btn btn-ghost" onclick="resetFilters()">Limpiar</button></div>
-    <div style="margin-left:auto;color:var(--muted);font-size:.82rem" id="filterInfo">Mostrando 161 de 161</div><div style="width:100%;color:var(--pink);font-size:.75rem;margin-top:4px">ℹ️ Solo un filtro activo a la vez. Click en otro gráfico reemplaza el filtro anterior.</div>
+    <div style="margin-left:auto;color:var(--muted);font-size:.82rem" id="filterInfo">Mostrando —</div><div style="width:100%;color:var(--pink);font-size:.75rem;margin-top:4px">ℹ️ Solo un filtro activo a la vez. Click en otro gráfico reemplaza el filtro anterior.</div>
   </div>
   <div id="activeFilters"></div>
   <div id="toast"></div>
 
   <div class="grid">
-    <div class="card" id="card-score"><h3>Distribución de Score <span>Histograma</span> <span class="hint">click para filtrar</span></h3><canvas id="scoreChart"></canvas><div class="insight"><b>Insight:</b> 105 ofertas están en 70-89. Diferenciar por salario y empresa evita aplicar a ciegas. High Fit 22 es el sweet spot.</div></div>
-    <div class="card" id="card-salary"><h3>Salario promedio por Score <span>ARS/mes</span> <span class="hint">click para filtrar</span></h3><canvas id="salaryChart"></canvas><div class="insight"><b>Insight:</b> Correlación clara: a mayor score, mayor salario. High Fit paga <b>+56%</b> vs Low. Priorizar High Fit es también decisión económica.</div></div>
-    <div class="card" id="card-skills"><h3>Top Skills demandadas <span>Top 10</span> <span class="hint">click para filtrar</span></h3><canvas id="skillsChart"></canvas><div class="insight"><b>Insight:</b> Leadership (71%) y PM (48%) dominan — son tus fortalezas. Gap: Data Analyst solo 5.7% pero es tu punto a cerrar.</div></div>
-    <div class="card" id="card-company"><h3>Top Empresas <span>Con más vacantes</span> <span class="hint">click para filtrar</span></h3><canvas id="companyChart"></canvas><div class="insight"><b>Insight:</b> HireLATAM (8), Somewhere (5). Targetear estas empresas con outreach directo multiplica chances (varias vacantes similares).</div></div>
-    <div class="card" id="card-modality"><h3>Modalidades <span>Remote domina</span> <span class="hint">click para filtrar</span></h3><canvas id="modalityChart"></canvas><div class="insight"><b>Insight:</b> 93.3% Remote. Solo 6 Hybrid y 1 On-site (OLIVER) — presencial fuera BA eliminado. Estrategia 100% remote es viable — no limitarse geográficamente.</div></div>
-    <div class="card" id="card-location"><h3>Top Ubicaciones <span>Donde publican</span> <span class="hint">click para filtrar</span></h3><canvas id="locationChart"></canvas><div class="insight"><b>Insight:</b> "Latin America" genérico lidera (32%). Buenos Aires (17) + Argentina (17) = 34% AR-focus. Optimizar CV con keywords LATAM + Argentina.</div></div>
-    <div class="card" id="card-radar"><h3>Yanaina vs Mercado <span>Radar 0-10</span> <span class="hint">click skill para filtrar</span></h3><canvas id="radarChart"></canvas><div class="insight"><b>Insight:</b> Alta coincidencia en PM/Marketing/Leadership. Brecha crítica en Data/Analytics/SEO — son los 3 gaps que abren 13 jobs extra si se cierran.</div></div>
-    <div class="card" id="card-gap"><h3>Skill Gaps — Oportunidad <span>Jobs que piden skill que no tenés</span> <span class="hint">click para filtrar</span></h3><canvas id="gapChart"></canvas><div class="insight"><b>Insight:</b> Data Analyst (6), SEO/SEM (4), Analytics (3). Con curso corto de Data/SQL + SEO básico, pasás de 22 a ~35 High/Mid-High aplicables.</div></div>
+    <div class="card" id="card-score"><h3>Distribución de Score <span>Histograma</span> <span class="hint">click para filtrar</span></h3><canvas id="scoreChart"></canvas><div class="insight" id="insight-score">Cargando...</div></div>
+    <div class="card" id="card-salary"><h3>Salario promedio por Score <span>ARS/mes</span> <span class="hint">click para filtrar</span></h3><canvas id="salaryChart"></canvas><div class="insight" id="insight-salary">Cargando...</div></div>
+    <div class="card" id="card-skills"><h3>Top Skills demandadas <span>Top 10</span> <span class="hint">click para filtrar</span></h3><canvas id="skillsChart"></canvas><div class="insight" id="insight-skills">Cargando...</div></div>
+    <div class="card" id="card-company"><h3>Top Empresas <span>Con más vacantes</span> <span class="hint">click para filtrar</span></h3><canvas id="companyChart"></canvas><div class="insight" id="insight-company">Cargando...</div></div>
+    <div class="card" id="card-modality"><h3>Modalidades <span>Remote domina</span> <span class="hint">click para filtrar</span></h3><canvas id="modalityChart"></canvas><div class="insight" id="insight-modality">Cargando...</div></div>
+    <div class="card" id="card-location"><h3>Top Ubicaciones <span>Donde publican</span> <span class="hint">click para filtrar</span></h3><canvas id="locationChart"></canvas><div class="insight" id="insight-location">Cargando...</div></div>
+    <div class="card" id="card-radar"><h3>Yanaina vs Mercado <span>Radar 0-10</span> <span class="hint">click skill para filtrar</span></h3><canvas id="radarChart"></canvas><div class="insight" id="insight-radar">Cargando...</div></div>
+    <div class="card" id="card-gap"><h3>Skill Gaps — Oportunidad <span>Jobs que piden skill que no tenés</span> <span class="hint">click para filtrar</span></h3><canvas id="gapChart"></canvas><div class="insight" id="insight-gap">Cargando...</div></div>
   </div>
 
   <div class="recs">
-    <div class="rec urgent"><h4>🔴 URGENTE — Cerrar gap</h4><ul id="recUrgent"><li>Data Analyst — 6 jobs (5.7%)</li><li>SEO/SEM — 4 jobs</li><li>Analytics — 3 jobs</li></ul><div style="margin-top:8px;font-size:.78rem;color:var(--muted)">Acción: Curso SQL + Power BI/Tableau (2-3 sem) + SEO/SEM fundamentals. Convierte ~13 jobs de Low a Mid.</div></div>
-    <div class="rec warn"><h4>🟡 IMPORTANTE — Potenciar</h4><ul><li>Jira/Asana — mencionado en notas, no en skills (gap oculto)</li><li>Tableau / Power BI — 0 jobs etiquetados pero buscado en BI roles</li><li>English avanzado — 10 jobs lo listan explícito</li></ul><div style="margin-top:8px;font-size:.78rem;color:var(--muted)">Acción: Agregar Jira/Asana y nivel de inglés al CV si ya lo tenés — son filtros ATS.</div></div>
-    <div class="rec good"><h4>🟢 FORTALEZAS — Apalancar</h4><ul><li>Leadership — 74 jobs (71.2%)</li><li>Project Manager — 50 jobs (48.1%)</li><li>Marketing — 47 jobs (45.2%)</li></ul><div style="margin-top:8px;font-size:.78rem;color:var(--muted)">Acción: Titular del CV: "Project Manager | Marketing Leadership | Remote LATAM" — matchea 48% del mercado.</div></div>
+    <div class="rec urgent"><h4>🔴 URGENTE — Cerrar gap</h4><ul id="recUrgent"><li style="color:var(--muted)">Cargá tu CV y Sheet para ver tus gaps</li></ul><div id="recUrgentAction" style="margin-top:8px;font-size:.78rem;color:var(--muted)">—</div></div>
+    <div class="rec warn"><h4>🟡 IMPORTANTE — Potenciar</h4><ul id="recImportant"><li style="color:var(--muted)">Cargando...</li></ul><div id="recImportantAction" style="margin-top:8px;font-size:.78rem;color:var(--muted)">—</div></div>
+    <div class="rec good"><h4>🟢 FORTALEZAS — Apalancar</h4><ul id="recGood"><li style="color:var(--muted)">Cargando...</li></ul><div id="recGoodAction" style="margin-top:8px;font-size:.78rem;color:var(--muted)">—</div></div>
   </div>
 
   <div class="table-wrap">
-    <div class="table-head"><h2>⭐ TOP MATCHES — Score ≥ 90 <span id="topCount">22</span></h2><span style="color:var(--muted);font-size:.82rem">Ordenado por score → salario</span></div>
+    <div class="table-head"><h2>⭐ TOP MATCHES — Score ≥ 90 <span id="topCount">—</span></h2><span style="color:var(--muted);font-size:.82rem">Ordenado por score → salario</span></div>
     <div style="overflow:auto;max-height:520px"><table><thead><tr><th onclick="sortTop('score')"># ↕</th><th onclick="sortTop('score')">Score ↕</th><th>Título</th><th>Empresa</th><th>Ubicación</th><th onclick="sortTop('salary_ars')">Salario ↕</th><th>Link</th></tr></thead><tbody id="topTable"></tbody></table></div>
   </div>
 
   <div class="table-wrap">
-    <div class="table-head"><h2>📋 TODAS LAS OFERTAS <span id="totalCount">161</span></h2><span style="color:var(--muted);font-size:.82rem" id="pageInfo">Pág 1/6</span></div>
+    <div class="table-head"><h2>📋 TODAS LAS OFERTAS <span id="totalCount">—</span></h2><span style="color:var(--muted);font-size:.82rem" id="pageInfo">Pág 1/6</span></div>
     <div style="overflow:auto;max-height:560px"><table><thead><tr><th>#</th><th onclick="sortAll('score')">Score ↕</th><th>Título</th><th>Empresa</th><th>Ubicación</th><th onclick="sortAll('salary_ars')">Salario ↕</th><th>Link</th></tr></thead><tbody id="allTable"></tbody></table></div>
     <div class="pagination" id="pagination"></div>
   </div>
@@ -269,7 +269,7 @@ a{color:#5eead4;text-decoration:none}a:hover{text-decoration:underline}
 </div>
 
 <script>
-const JOBS = [{"job_id": "DEMO-001", "fecha_scrapeo": "2026-09-01", "titulo": "Project Manager - Remote LATAM", "empresa": "Demo Corp", "ubicacion": "Latin America", "modalidad": "Remote", "url": "https://example.com", "notas": "Ejemplo. 3+ años PM. English.", "skills": ["Project Manager", "Marketing", "Leadership"], "score": 95, "salary_ars": 2100000, "salary_formatted": "$2.100.000", "salary_currency": "ARS", "salary_display": "$2.100.000 ARS/mes", "salary_ars_equivalent": 2100000, "salary_usd_monthly": null, "salary_notes_usd": false}, {"job_id": "DEMO-002", "fecha_scrapeo": "2026-09-01", "titulo": "Scrum Master - Remote", "empresa": "Demo Agile", "ubicacion": "Argentina", "modalidad": "Remote", "url": "https://example.com", "notas": "Scrum Master. 2 años.", "skills": ["Scrum Master", "Agile/Scrum"], "score": 75, "salary_ars": 1300000, "salary_formatted": "$1.300.000", "salary_currency": "ARS", "salary_display": "$1.300.000 ARS/mes", "salary_ars_equivalent": 1300000, "salary_usd_monthly": null, "salary_notes_usd": false}, {"job_id": "DEMO-003", "fecha_scrapeo": "2026-09-01", "titulo": "Marketing Manager - USD 2000", "empresa": "Demo Marketing", "ubicacion": "Buenos Aires, Argentina", "modalidad": "Remote", "url": "https://example.com", "notas": "USD 2000/month. Marketing.", "skills": ["Marketing", "Leadership"], "score": 85, "salary_ars": 3250000, "salary_formatted": "USD 2.000", "salary_currency": "USD", "salary_display": "USD 2.000 /mes", "salary_ars_equivalent": 3250000, "salary_usd_monthly": 2000, "salary_notes_usd": false}];
+const JOBS = [];
 
 
 // --- CV Personalizado ---
@@ -437,6 +437,25 @@ function computeScorePersonalized(jobSkills, ubicacion, modalidad, titulo){
   return Math.max(60, Math.min(100, Math.round(base)));
 }
 function updateDynamicInsights(){
+  // si no hay datos, mostrar placeholder
+  if(JOBS.length===0){
+    document.getElementById('insight-score').textContent='Sin datos — cargá tu Sheet con ofertas';
+    document.getElementById('insight-salary').textContent='Sin datos';
+    document.getElementById('insight-skills').textContent='Sin datos';
+    document.getElementById('insight-company').textContent='Sin datos';
+    document.getElementById('insight-modality').textContent='Sin datos';
+    document.getElementById('insight-location').textContent='Sin datos';
+    document.getElementById('insight-radar').textContent='Sin datos';
+    document.getElementById('insight-gap').textContent='Sin datos';
+    document.getElementById('recUrgent').innerHTML='<li style="color:var(--muted)">Sin datos — cargá tu Sheet y CV</li>';
+    document.getElementById('recUrgentAction').textContent='—';
+    document.getElementById('recImportant').innerHTML='<li style="color:var(--muted)">—</li>';
+    document.getElementById('recImportantAction').textContent='—';
+    document.getElementById('recGood').innerHTML='<li style="color:var(--muted)">—</li>';
+    document.getElementById('recGoodAction').textContent='—';
+    return;
+  }
+  // con datos, continuar
   const name=userProfile?.name || 'Tu perfil';
   const userSkills=userProfile?.skills || new Set();
   // radar title
@@ -468,9 +487,9 @@ function updateDynamicInsights(){
   // si no hay secondary, usar gapsAll 3-6
   const importanteGaps = secondaryGaps.length? secondaryGaps.slice(0,3) : gapsAll.slice(3,6);
 
-  const urgentEl=document.querySelector('.rec.urgent ul');
-  const warnEl=document.querySelector('.rec.warn ul');
-  const goodEl=document.querySelector('.rec.good ul');
+  const urgentEl=document.getElementById('recUrgent');
+  const warnEl=document.getElementById('recImportant');
+  const goodEl=document.getElementById('recGood');
   if(urgentEl){
     if(userProfile && gaps.length){
       urgentEl.innerHTML=gaps.map(([s,c])=>`<li>${s} — ${c} jobs (${(c/JOBS.length*100).toFixed(1)}%) 🔴 gap para ${name}</li>`).join('');
@@ -479,7 +498,7 @@ function updateDynamicInsights(){
     } else {
       urgentEl.innerHTML='<li style="color:var(--green)">¡Sin gaps críticos! Tu perfil cubre el top del mercado</li>';
     }
-    const actionEl=urgentEl.nextElementSibling;
+    const actionEl=document.getElementById('recUrgentAction');
     if(actionEl){
       if(userProfile) actionEl.textContent=`Basado en CV de ${name}: cerrar ${gaps.map(g=>g[0]).join(', ') || '—'} te abre ${gaps.reduce((a,[,c])=>a+c,0)} jobs extra`;
       else actionEl.textContent='Cargá tu CV para ver tus gaps personales';
@@ -488,7 +507,7 @@ function updateDynamicInsights(){
   if(warnEl){
     if(userProfile && importanteGaps.length){
       warnEl.innerHTML=importanteGaps.map(([s,c])=>`<li>${s} — ${c? c+' jobs':''} ${!userSkills.has(s)?'🟡 a potenciar':''}</li>`).join('');
-      const actionEl=warnEl.nextElementSibling;
+      const actionEl=document.getElementById('recImportantAction');
       if(actionEl) actionEl.textContent=`Para ${name}: agregar ${importanteGaps.map(g=>g[0]).join(', ')} a tu CV si los tenés`;
     } else if(!userProfile){
       // keep generic
@@ -497,7 +516,7 @@ function updateDynamicInsights(){
   if(goodEl){
     if(userProfile && strengths.length){
       goodEl.innerHTML=strengths.map(([s,c])=>`<li>${s} — ${c} jobs (${(c/JOBS.length*100).toFixed(1)}%) ✓ tenés</li>`).join('');
-      const actionEl=goodEl.nextElementSibling;
+      const actionEl=document.getElementById('recGoodAction');
       if(actionEl) actionEl.innerHTML=`Para <b>${name}</b>: destacá <b>${strengths.map(s=>s[0]).join(' · ')}</b> en tu titular — matchea ${(strengths[0][1]/JOBS.length*100).toFixed(0)}% del mercado`;
     } else if(userProfile){
       goodEl.innerHTML='<li>No coinciden top skills — revisá tu CV o agregá sinónimos (ej: Project Manager, Leadership)</li>';
@@ -861,6 +880,26 @@ const fmt = n => '$'+n.toLocaleString('es-AR');
 
 function updateKpis(){
   const n = JOBS.length;
+  if(n===0){
+    document.getElementById('kpiTotal').textContent='0';
+    document.getElementById('kpiTop').textContent='—';
+    document.getElementById('kpiMid').textContent='—';
+    document.getElementById('kpiRemote').textContent='—';
+    document.getElementById('kpiRemoteSub').textContent='Sin datos — cargá tu Sheet';
+    document.getElementById('kpiAR').textContent='—';
+    document.getElementById('heroScore').innerHTML='— <small>/ 0</small>';
+    document.getElementById('heroRemotePct').textContent='—';
+    document.getElementById('heroAvgHigh').textContent='—';
+    document.getElementById('heroAvgRest').textContent='—';
+    document.getElementById('heroSalaryPremium').textContent='—';
+    document.getElementById('mini90').textContent='—';
+    document.getElementById('mini80').textContent='—';
+    document.getElementById('mini70').textContent='—';
+    document.getElementById('mini60').textContent='—';
+    document.getElementById('miniAvg').textContent='—';
+    document.getElementById('miniMed').textContent='—';
+    return;
+  }
   const high = JOBS.filter(j=>j.score>=90).length;
   const mid = JOBS.filter(j=>j.score>=70 && j.score<90).length;
   const remote = JOBS.filter(j=>j.modalidad==='Remote').length;
@@ -954,6 +993,11 @@ let charts=[];
 function renderCharts(){
   charts.forEach(ch=>ch.destroy()); charts=[];
   Chart.defaults.color='#94a3b8'; Chart.defaults.borderColor='#334155';
+  if(JOBS.length===0){
+    // mostrar mensaje en cada canvas
+    document.querySelectorAll('.card canvas').forEach(c=>{ const ctx=c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height); ctx.fillStyle='#334155'; ctx.font='14px Inter'; ctx.textAlign='center'; ctx.fillText('Sin datos — cargá tu Sheet', c.width/2, c.height/2); });
+    return;
+  }
   const buckets={'60-69':0,'70-79':0,'80-89':0,'90-100':0};
   JOBS.forEach(j=>{
     if(j.score>=90) buckets['90-100']++;
