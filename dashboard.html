@@ -7,6 +7,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://unpkg.com/mammoth@1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -141,6 +142,17 @@ a{color:#5eead4;text-decoration:none}a:hover{text-decoration:underline}
         <label style="font-size:.75rem;font-weight:700;letter-spacing:.08em;color:var(--pink)">PEGÁ EL LINK DEL GOOGLE SHEET CON LOS PUESTOS</label>
         <input id="sheetLinkInput" placeholder="https://docs.google.com/spreadsheets/d/TU_SHEET_ID.../edit" style="width:100%;margin-top:6px;background:#0f172a;border:1px solid #334155;color:var(--text);padding:11px 12px;border-radius:10px;font-size:.9rem" />
         <div style="font-size:.75rem;color:var(--muted);margin-top:6px">Debe estar: Compartir → Cualquiera con el link (Lector) + Archivo → Publicar en la web → CSV. Tus datos quedan en tu Sheet, no se suben a GitHub.</div>
+<div id="sheetTroubleshoot" style="margin-top:8px;background:#0f172a;border:1px solid var(--amber);border-radius:10px;padding:10px 12px;font-size:.78rem;color:#fde68a;display:none">
+  <div style="font-weight:700;color:var(--amber);margin-bottom:6px">⚠️ ¿El link falla? Seguí estos pasos:</div>
+  <ol style="margin:0;padding-left:18px;line-height:1.7">
+    <li>Abrí tu Google Sheet.</li>
+    <li><b>Archivo → Compartir → Publicar en la web</b> (no es solo Compartir).</li>
+    <li>Elegí la hoja correcta y formato <b>CSV</b>.</li>
+    <li>Click <b>Publicar</b> y copiá el link generado.</li>
+    <li>Si ya publicaste, esperá 1-2 minutos y recargá esta página.</li>
+  </ol>
+  <div style="margin-top:6px;font-size:.72rem;color:var(--muted)">Si seguís con error, usá la opción <b>Subí CSV o Excel</b> más abajo.</div>
+</div>
         <div id="sheetLinkHint" style="font-size:.75rem;color:var(--amber);margin-top:4px;display:none"></div>
       </div>
       <div style="display:flex;gap:8px;align-items:end">
@@ -152,12 +164,12 @@ a{color:#5eead4;text-decoration:none}a:hover{text-decoration:underline}
     <details style="margin-top:12px;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:10px">
       <summary style="cursor:pointer;font-size:.82rem;color:var(--muted);font-weight:700">¿Sheets no carga? → Subí CSV manual</summary>
       <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <input type="file" id="csvFileInput" accept=".csv" style="font-size:.85rem;color:var(--muted)" />
+        <input type="file" id="csvFileInput" accept=".csv,.xlsx,.xls,.txt" style="font-size:.85rem;color:var(--muted)" onchange="loadFromManual()" />
         <span style="font-size:.75rem;color:var(--muted)">o pegá CSV aquí:</span>
         <textarea id="csvPaste" placeholder="job_id,fecha_scrapeo,titulo,empresa..." style="width:100%;height:80px;background:#020617;border:1px solid #334155;color:var(--text);border-radius:8px;padding:8px;font-size:.75rem"></textarea>
         <button class="btn btn-ghost" onclick="loadFromManual()" style="padding:6px 12px;font-size:.8rem">Cargar CSV pegado</button>
       </div>
-      <div style="font-size:.7rem;color:var(--muted);margin-top:6px">Exportá desde Sheets: Archivo → Descargar → Valores separados por comas (.csv) y subilo aquí. No necesitas publicar.</div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:6px"><b>Subí CSV o Excel (.xlsx)</b> — se convierte automáticamente. Exportá desde Sheets: Archivo → Descargar → Valores separados por comas (.csv) y subilo aquí. No necesitás publicar.</div>
     </details>
   </div>
 
@@ -471,13 +483,38 @@ async function loadFromJSON() {
 
 async function loadFromSheet(silent) {
   const input = document.getElementById('sheetLinkInput');
+  const hintEl = document.getElementById('sheetLinkHint');
+  const troubleEl = document.getElementById('sheetTroubleshoot');
+  if (hintEl) { hintEl.style.display = 'none'; hintEl.innerHTML = ''; }
+  if (troubleEl) troubleEl.style.display = 'none';
   let url = input ? input.value.trim() : '';
   if (!url) {
-    if (!silent) showToast('Pegá un link de Google Sheet primero');
+    if (!silent) {
+      showToast('Pegá un link de Google Sheet primero');
+      if (hintEl) { hintEl.innerHTML = '⚠ Pegá un link de Google Sheet primero'; hintEl.style.display = 'block'; }
+    }
     return;
   }
+  if (!/^https?:\/\//i.test(url)) {
+    if (!silent) {
+      const msg = '⚠ El link debe empezar con https:// — verificá que copiaste el link completo.';
+      showToast(msg);
+      if (hintEl) { hintEl.innerHTML = msg; hintEl.style.display = 'block'; }
+      setSheetStatus('error', 'Link inválido');
+    }
+    return;
+  }
+  if (!/docs\.google\.com/i.test(url)) {
+    if (!silent) {
+      const msg = '⚠ Esto no parece un link de Google Sheets (docs.google.com).';
+      showToast(msg);
+      if (hintEl) { hintEl.innerHTML = msg; hintEl.style.display = 'block'; }
+      setSheetStatus('error', 'Link no es de Google Sheets');
+    }
+    return;
+  }
+  let csvUrl = url;
   try {
-    let csvUrl = url;
     if (url.includes('/edit')) {
       const match = url.match(/\/d\/([^/]+)/);
       if (match) {
@@ -486,22 +523,77 @@ async function loadFromSheet(silent) {
         csvUrl = url.replace(/\/edit.*$/, '/export?format=csv&gid=0');
       }
     }
-    if (!silent) document.getElementById('sheetStatus').textContent = '⏳ Cargando...';
-    const resp = await fetch(csvUrl);
-    if (!resp.ok) throw new Error('No se pudo cargar el Sheet');
+    if (!silent) setSheetStatus('loading', '⏳ Cargando...');
+    const resp = await fetch(csvUrl, { redirect: 'follow' });
+    if (!resp.ok) {
+      if (resp.status === 403 || resp.status === 401) {
+        throw new Error('HTTP_403: el Sheet no es público o no está publicado.');
+      } else if (resp.status === 404) {
+        throw new Error('HTTP_404: link incorrecto o Sheet borrado.');
+      } else {
+        throw new Error('HTTP_' + resp.status + ': no se pudo cargar el Sheet.');
+      }
+    }
     const text = await resp.text();
+    const trimmedStart = text.trim().toLowerCase();
+    if (trimmedStart.startsWith('<!doctype html') || trimmedStart.startsWith('<html') || /<title>sign in/i.test(text.slice(0, 500))) {
+      throw new Error('HTML_REDIRECT');
+    }
+    if (trimmedStart.startsWith('<') && !text.includes(',') && !text.includes('\n')) {
+      throw new Error('HTML_REDIRECT');
+    }
     const jobs = parseCSV(text);
     if (jobs.length === 0) throw new Error('CSV vacío o sin filas válidas');
     processJobs(jobs);
     sheetLastSync = new Date();
     updateLastSync();
     showToast('\u2713 Sheet cargado: ' + jobs.length + ' trabajos');
-    document.getElementById('sheetStatus').textContent = '\u2713 Actualizado';
+    setSheetStatus('success', '\u2713 Actualizado · ' + jobs.length + ' jobs');
   } catch(e) {
     console.error('Sheet load error:', e);
-    showToast('Error cargando Sheet: ' + e.message);
-    document.getElementById('sheetStatus').textContent = '\u2717 Error';
+    let userMsg = '';
+    let detailed = '';
+    const msg = (e.message || '').toLowerCase();
+    if (e.message === 'HTML_REDIRECT' || /failed to fetch|networkerror|cors/.test(msg)) {
+      userMsg = 'El Sheet no está publicado en la web.';
+      detailed = '📋 Andá a Archivo → Compartir → Publicar en la web → CSV → Publicar. Si ya está publicado, verificá que el link sea correcto y esperá 1-2 min.';
+    } else if (/http_?403|401/.test(e.message)) {
+      userMsg = 'El Sheet no es público o requiere login.';
+      detailed = '📋 Archivo → Compartir → Cualquiera con el link (Lector). Si ya está compartido, asegurate de PUBLICAR en la web (no es lo mismo).';
+    } else if (/http_?404/.test(e.message)) {
+      userMsg = 'Link incorrecto o Sheet no encontrado.';
+      detailed = '📋 Verificá que copiaste el link completo desde la barra de direcciones de Google Sheets.';
+    } else if (/csv vac|sin filas/.test(e.message)) {
+      userMsg = 'El Sheet está publicado pero parece vacío.';
+      detailed = '📋 Verificá que la hoja tenga datos y encabezados (job_id, titulo, empresa, etc).';
+    } else {
+      userMsg = 'Error cargando Sheet.';
+      detailed = e.message;
+    }
+    showToast(userMsg + ' ' + detailed);
+    if (hintEl) { hintEl.innerHTML = '<b>' + userMsg + '</b><br>' + detailed; hintEl.style.display = 'block'; }
+    if (troubleEl) troubleEl.style.display = 'block';
+    if (!silent) setSheetStatus('error', '✗ ' + userMsg);
   }
+}
+
+function setSheetStatus(kind, text) {
+  const el = document.getElementById('sheetStatus');
+  if (!el) return;
+  const colors = {
+    loading: { bg: 'rgba(245,158,11,.15)', fg: '#fbbf24', border: 'rgba(245,158,11,.4)' },
+    success: { bg: 'rgba(34,197,94,.15)', fg: '#4ade80', border: 'rgba(34,197,94,.4)' },
+    error:   { bg: 'rgba(239,68,68,.15)', fg: '#f87171', border: 'rgba(239,68,68,.4)' },
+    idle:    { bg: 'transparent', fg: 'var(--muted)', border: 'transparent' }
+  };
+  const c = colors[kind] || colors.idle;
+  el.textContent = text;
+  el.style.background = c.bg;
+  el.style.color = c.fg;
+  el.style.border = '1px solid ' + c.border;
+  el.style.padding = (kind === 'idle') ? '0' : '4px 10px';
+  el.style.borderRadius = '999px';
+  el.style.fontWeight = '700';
 }
 
 function loadFromPastedLink() {
@@ -509,27 +601,58 @@ function loadFromPastedLink() {
 }
 
 async function loadFromManual() {
+  const pasteEl = document.getElementById('csvPaste');
+  const fileEl = document.getElementById('csvFileInput');
+  const loaderStatus = document.getElementById('sheetLoaderStatus');
   try {
-    const pasteEl = document.getElementById('csvPaste');
-    const fileEl = document.getElementById('csvFileInput');
     let text = '';
+    let sourceLabel = '';
     if (pasteEl && pasteEl.value.trim()) {
       text = pasteEl.value.trim();
+      sourceLabel = 'CSV pegado';
     } else if (fileEl && fileEl.files.length > 0) {
-      text = await fileEl.files[0].text();
+      const file = fileEl.files[0];
+      const fileName = file.name;
+      const lower = fileName.toLowerCase();
+      if (lower.endsWith('.xlsx') || lower.endsWith('.xls')) {
+        if (typeof XLSX === 'undefined') {
+          throw new Error('La librería SheetJS no se cargó. Verificá tu conexión a internet y recargá la página.');
+        }
+        if (loaderStatus) loaderStatus.textContent = '⏳ Leyendo ' + fileName + ' (Excel)...';
+        const buf = await file.arrayBuffer();
+        const wb = XLSX.read(buf, { type: 'array' });
+        if (!wb.SheetNames || wb.SheetNames.length === 0) {
+          throw new Error('El archivo Excel no tiene hojas.');
+        }
+        const firstSheetName = wb.SheetNames[0];
+        const sheet = wb.Sheets[firstSheetName];
+        text = XLSX.utils.sheet_to_csv(sheet);
+        sourceLabel = fileName + ' (hoja "' + firstSheetName + '")';
+      } else if (lower.endsWith('.csv') || lower.endsWith('.txt')) {
+        if (loaderStatus) loaderStatus.textContent = '⏳ Leyendo ' + fileName + '...';
+        text = await file.text();
+        sourceLabel = fileName;
+      } else {
+        throw new Error('Formato no soportado: ' + fileName + '. Usá .csv, .xlsx, .xls o .txt');
+      }
     } else {
-      showToast('Pegá un CSV o seleccioná un archivo');
+      showToast('Pegá un CSV/Excel o seleccioná un archivo');
+      if (loaderStatus) loaderStatus.textContent = '⚠ Pegá un CSV/Excel o seleccioná un archivo.';
       return;
     }
+    if (!text || !text.trim()) throw new Error('El archivo está vacío.');
     const jobs = parseCSV(text);
-    if (jobs.length === 0) throw new Error('CSV vacío o inválido');
+    if (jobs.length === 0) throw new Error('No se detectaron filas válidas. Verificá que la primera fila tenga encabezados (job_id, titulo, empresa, etc).');
     processJobs(jobs);
     sheetLastSync = new Date();
     updateLastSync();
-    showToast('\u2713 CSV cargado: ' + jobs.length + ' trabajos');
+    showToast('\u2713 ' + sourceLabel + ' cargado: ' + jobs.length + ' trabajos');
+    if (loaderStatus) loaderStatus.innerHTML = '<span style="color:var(--green);font-weight:700">\u2713 ' + sourceLabel + ' · ' + jobs.length + ' jobs</span>';
+    if (fileEl) fileEl.value = '';
   } catch(e) {
     console.error('Manual load error:', e);
-    showToast('Error cargando CSV: ' + e.message);
+    showToast('Error: ' + e.message);
+    if (loaderStatus) loaderStatus.innerHTML = '<span style="color:#f87171;font-weight:700">✗ ' + e.message + '</span>';
   }
 }
 
@@ -952,6 +1075,8 @@ function renderFilterInfo() {
 // ============================================================
 
 function renderCharts() {
+  // Safety net: destroy all existing charts first
+  Object.keys(charts).forEach(k => { if (charts[k]) { try { charts[k].destroy(); } catch(e){} charts[k] = null; } });
   renderScoreChart();
   renderSalaryChart();
   renderSkillsChart();
@@ -1336,7 +1461,7 @@ function showNewJobsBanner(count) {
 function formatSalary(ars) {
   if (!ars && ars !== 0) return '\u2014';
   const n = Math.round(ars);
-  const s = n.toString();
+  let s = n.toString();
   const parts = [];
   while (s.length > parts.length * 3) {
     parts.unshift(s.slice(-3));
