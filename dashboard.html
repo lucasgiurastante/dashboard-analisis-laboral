@@ -427,6 +427,961 @@ function analyzeCVText(){
     console.error('CV load error:', e);
     showToast('Error: '+e.message);
   }
-}</script>
+}
+// ============================================================
+// YANAINA DASHBOARD — COMPLETE JAVASCRIPT ENGINE
+// ============================================================
+
+// --- State & Globals ---
+let sheetLastSync = null;
+let activeFilter = null;
+let activeFilters = [];
+let sortStateTop = {field:'score', asc:false};
+let sortStateAll = {field:'score', asc:false};
+let currentPage = 1;
+const PAGE_SIZE = 25;
+let filteredJobs = [];
+let charts = {};
+
+// ============================================================
+// DATA LOADING
+// ============================================================
+
+async function loadFromJSON() {
+  try {
+    showToast('Cargando datos demo...');
+    const resp = await fetch('yanaina_jobs.json');
+    if (!resp.ok) throw new Error('No se encontró yanaina_jobs.json');
+    const data = await resp.json();
+    if (!Array.isArray(data) || data.length === 0) {
+      showToast('Archivo vacío — usá Sheet o CSV manual');
+      return false;
+    }
+    processJobs(data);
+    sheetLastSync = new Date();
+    updateLastSync();
+    showToast('\u2713 ' + data.length + ' trabajos cargados (demo)');
+    return true;
+  } catch(e) {
+    console.error('JSON load error:', e);
+    showToast('Error cargando JSON: ' + e.message);
+    return false;
+  }
+}
+
+async function loadFromSheet(silent) {
+  const input = document.getElementById('sheetLinkInput');
+  let url = input ? input.value.trim() : '';
+  if (!url) {
+    if (!silent) showToast('Pegá un link de Google Sheet primero');
+    return;
+  }
+  try {
+    let csvUrl = url;
+    if (url.includes('/edit')) {
+      const match = url.match(/\/d\/([^/]+)/);
+      if (match) {
+        csvUrl = 'https://docs.google.com/spreadsheets/d/' + match[1] + '/export?format=csv&gid=0';
+      } else {
+        csvUrl = url.replace(/\/edit.*$/, '/export?format=csv&gid=0');
+      }
+    }
+    if (!silent) document.getElementById('sheetStatus').textContent = '⏳ Cargando...';
+    const resp = await fetch(csvUrl);
+    if (!resp.ok) throw new Error('No se pudo cargar el Sheet');
+    const text = await resp.text();
+    const jobs = parseCSV(text);
+    if (jobs.length === 0) throw new Error('CSV vacío o sin filas válidas');
+    processJobs(jobs);
+    sheetLastSync = new Date();
+    updateLastSync();
+    showToast('\u2713 Sheet cargado: ' + jobs.length + ' trabajos');
+    document.getElementById('sheetStatus').textContent = '\u2713 Actualizado';
+  } catch(e) {
+    console.error('Sheet load error:', e);
+    showToast('Error cargando Sheet: ' + e.message);
+    document.getElementById('sheetStatus').textContent = '\u2717 Error';
+  }
+}
+
+function loadFromPastedLink() {
+  loadFromSheet(false);
+}
+
+async function loadFromManual() {
+  try {
+    const pasteEl = document.getElementById('csvPaste');
+    const fileEl = document.getElementById('csvFileInput');
+    let text = '';
+    if (pasteEl && pasteEl.value.trim()) {
+      text = pasteEl.value.trim();
+    } else if (fileEl && fileEl.files.length > 0) {
+      text = await fileEl.files[0].text();
+    } else {
+      showToast('Pegá un CSV o seleccioná un archivo');
+      return;
+    }
+    const jobs = parseCSV(text);
+    if (jobs.length === 0) throw new Error('CSV vacío o inválido');
+    processJobs(jobs);
+    sheetLastSync = new Date();
+    updateLastSync();
+    showToast('\u2713 CSV cargado: ' + jobs.length + ' trabajos');
+  } catch(e) {
+    console.error('Manual load error:', e);
+    showToast('Error cargando CSV: ' + e.message);
+  }
+}
+
+function clearSheetLink() {
+  document.getElementById('sheetLinkInput').value = '';
+  document.getElementById('sheetStatus').textContent = '';
+  loadFromJSON();
+  showToast('Link limpiado — cargando datos demo');
+}
+
+function parseCSV(text) {
+  if (!text || !text.trim()) return [];
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return [];
+  const parseLine = (line) => {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (inQuotes) {
+        if (ch === '"' && line[i+1] === '"') { current += '"'; i++; }
+        else if (ch === '"') { inQuotes = false; }
+        else { current += ch; }
+      } else {
+        if (ch === '"') { inQuotes = true; }
+        else if (ch === ',') { result.push(current.trim()); current = ''; }
+        else { current += ch; }
+      }
+    }
+    result.push(current.trim());
+    return result;
+  };
+  const headers = parseLine(lines[0]).map(h => h.toLowerCase().replace(/"/g, ''));
+  const jobs = [];
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    const values = parseLine(lines[i]);
+    const job = {};
+    for (let j = 0; j < headers.length; j++) {
+      const h = headers[j];
+      const v = values[j] || '';
+      if (h === 'job_id' || h === 'id') job.job_id = v;
+      else if (h === 'fecha_scrapeo' || h === 'fecha') job.fecha_scrapeo = v;
+      else if (h === 'titulo' || h === 'title') job.titulo = v;
+      else if (h === 'empresa' || h === 'company') job.empresa = v;
+      else if (h === 'ubicacion' || h === 'location') job.ubicacion = v;
+      else if (h === 'modalidad' || h === 'modality') job.modalidad = v;
+      else if (h === 'url' || h === 'link') job.url = v;
+      else if (h === 'notas' || h === 'notes') job.notas = v;
+      else if (h === 'skills') job.skills = v;
+      else if (h === 'score') job.score = parseFloat(v) || null;
+      else if (h === 'salary_ars') job.salary_ars = parseFloat(v) || null;
+      else if (h === 'salary_currency') job.salary_currency = v;
+      else if (h === 'salary_display') job.salary_display = v;
+      else if (h === 'salary_ars_equivalent') job.salary_ars_equivalent = parseFloat(v) || null;
+      else if (h === 'salary_usd_monthly') job.salary_usd_monthly = parseFloat(v) || null;
+      else if (h === 'salary_notes_usd') job.salary_notes_usd = v === 'true' || v === '1';
+    }
+    jobs.push(job);
+  }
+  return jobs;
+}
+
+// ============================================================
+// DATA PROCESSING
+// ============================================================
+
+function processJobs(rawJobs) {
+  const normalized = rawJobs.map(job => {
+    if (typeof job.skills === 'string' && job.skills.trim()) {
+      job.skills = job.skills.split(/[|,;]/).map(s => s.trim()).filter(Boolean);
+    } else if (Array.isArray(job.skills)) {
+      job.skills = job.skills.map(s => s.trim()).filter(Boolean);
+    } else {
+      job.skills = [];
+    }
+    const mod = (job.modalidad || '').toLowerCase().trim();
+    if (mod === 'remoto' || mod === 'remote' || mod === '100% remoto') job.modalidad = 'Remote';
+    else if (mod === 'h\u00edbrido' || mod === 'hybrid') job.modalidad = 'Hybrid';
+    else if (mod === 'presencial' || mod === 'on-site' || mod === 'onsite') job.modalidad = 'On-site';
+    else if (!job.modalidad) job.modalidad = 'N/A';
+    job.ubicacion = job.ubicacion || 'N/A';
+    job.titulo = job.titulo || 'Sin t\u00edtulo';
+    job.empresa = job.empresa || 'Sin empresa';
+    job.job_id = job.job_id || ('job_' + Math.random().toString(36).substr(2, 9));
+    job.salary_ars = job.salary_ars || null;
+    return job;
+  });
+  const deduped = dedupJobs(normalized);
+  deduped.forEach(job => {
+    if (job.score == null) job.score = computeGenericScore(job);
+  });
+  JOBS.length = 0;
+  JOBS.push(...deduped);
+  onDataLoaded();
+}
+
+function dedupJobs(jobs) {
+  const seen = new Set();
+  return jobs.filter(job => {
+    const id = job.job_id;
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+}
+
+function computeGenericScore(job) {
+  let score = 50;
+  const skillMatches = (job.skills || []).filter(s => ALL_SKILLS.includes(s)).length;
+  score += Math.min(skillMatches * 10, 30);
+  if (job.modalidad === 'Remote') score += 10;
+  if (job.salary_ars && job.salary_ars > 2000000) score += 10;
+  return Math.max(0, Math.min(100, score));
+}
+
+function recomputeAllScores() {
+  if (JOBS.length === 0) return;
+  JOBS.forEach(job => {
+    if (userProfile && userProfile.skills && userProfile.skills.size > 0) {
+      const overlap = (job.skills || []).filter(s => userProfile.skills.has(s)).length;
+      let score = 50 + (overlap * 10);
+      if (job.modalidad === 'Remote') score += 10;
+      if (job.salary_ars && job.salary_ars > 2000000) score += 10;
+      job.score = Math.max(0, Math.min(100, score));
+    } else {
+      job.score = computeGenericScore(job);
+    }
+  });
+  onDataLoaded();
+}
+
+// ============================================================
+// FILTERING
+// ============================================================
+
+function getFilteredJobs() {
+  let result = [...JOBS];
+  if (activeFilter) {
+    const {type, value} = activeFilter;
+    if (type === 'chart') {
+      const parts = value.split(':');
+      const filterType = parts[0];
+      const filterVal = parts.slice(1).join(':');
+      if (filterType === 'score') {
+        const [min, max] = filterVal.split('-').map(Number);
+        result = result.filter(j => j.score >= min && j.score <= max);
+      } else if (filterType === 'skill') {
+        result = result.filter(j => (j.skills || []).includes(filterVal));
+      } else if (filterType === 'mod') {
+        result = result.filter(j => j.modalidad === filterVal);
+      } else if (filterType === 'company') {
+        result = result.filter(j => j.empresa === filterVal);
+      } else if (filterType === 'location') {
+        result = result.filter(j => j.ubicacion === filterVal);
+      }
+    }
+  }
+  for (const filter of activeFilters) {
+    const {type, value} = filter;
+    if (type === 'q') {
+      const q = value.toLowerCase();
+      result = result.filter(j => (j.titulo || '').toLowerCase().includes(q) || (j.empresa || '').toLowerCase().includes(q) || (j.ubicacion || '').toLowerCase().includes(q));
+    } else if (type === 'score') {
+      result = result.filter(j => j.score >= parseInt(value));
+    } else if (type === 'mod') {
+      result = result.filter(j => j.modalidad === value);
+    } else if (type === 'skill') {
+      result = result.filter(j => (j.skills || []).includes(value));
+    }
+  }
+  return result;
+}
+
+function handleManualFilter() {
+  activeFilters = [];
+  activeFilter = null;
+  const q = document.getElementById('q');
+  const fScore = document.getElementById('fScore');
+  const fMod = document.getElementById('fMod');
+  const fSkill = document.getElementById('fSkill');
+  if (q && q.value.trim()) activeFilters.push({type:'q', value:q.value.trim()});
+  if (fScore && fScore.value && fScore.value !== '0') activeFilters.push({type:'score', value:fScore.value});
+  if (fMod && fMod.value) activeFilters.push({type:'mod', value:fMod.value});
+  if (fSkill && fSkill.value) activeFilters.push({type:'skill', value:fSkill.value});
+  applyFiltersAndRender();
+}
+
+function resetFilters() {
+  const q = document.getElementById('q');
+  const fScore = document.getElementById('fScore');
+  const fMod = document.getElementById('fMod');
+  const fSkill = document.getElementById('fSkill');
+  if (q) q.value = '';
+  if (fScore) fScore.value = '0';
+  if (fMod) fMod.value = '';
+  if (fSkill) fSkill.value = '';
+  activeFilters = [];
+  activeFilter = null;
+  currentPage = 1;
+  applyFiltersAndRender();
+}
+
+function applyFilter(type, value) {
+  activeFilter = {type, value};
+  activeFilters = [];
+  currentPage = 1;
+  const q = document.getElementById('q');
+  const fScore = document.getElementById('fScore');
+  const fMod = document.getElementById('fMod');
+  const fSkill = document.getElementById('fSkill');
+  if (q) q.value = '';
+  if (fScore) fScore.value = '0';
+  if (fMod) fMod.value = '';
+  if (fSkill) fSkill.value = '';
+  applyFiltersAndRender();
+}
+
+function applyFiltersAndRender() {
+  filteredJobs = getFilteredJobs();
+  currentPage = 1;
+  renderAll();
+}
+
+function removeFilter(type) {
+  activeFilters = activeFilters.filter(f => f.type !== type);
+  applyFiltersAndRender();
+}
+
+// ============================================================
+// SORTING
+// ============================================================
+
+function sortTop(field) {
+  if (sortStateTop.field === field) sortStateTop.asc = !sortStateTop.asc;
+  else { sortStateTop.field = field; sortStateTop.asc = false; }
+  const dir = sortStateTop.asc ? 1 : -1;
+  filteredJobs.sort((a, b) => {
+    let av = a[sortStateTop.field], bv = b[sortStateTop.field];
+    if (av == null) av = 0; if (bv == null) bv = 0;
+    if (typeof av === 'string') return dir * av.localeCompare(bv);
+    return dir * (av - bv);
+  });
+  renderTopTable();
+  renderAllTable();
+}
+
+function sortAll(field) {
+  if (sortStateAll.field === field) sortStateAll.asc = !sortStateAll.asc;
+  else { sortStateAll.field = field; sortStateAll.asc = false; }
+  const dir = sortStateAll.asc ? 1 : -1;
+  filteredJobs.sort((a, b) => {
+    let av = a[sortStateAll.field], bv = b[sortStateAll.field];
+    if (av == null) av = 0; if (bv == null) bv = 0;
+    if (typeof av === 'string') return dir * av.localeCompare(bv);
+    return dir * (av - bv);
+  });
+  renderAllTable();
+}
+
+// ============================================================
+// RENDERING — Stats & KPIs
+// ============================================================
+
+function onDataLoaded() {
+  renderSkillFilter();
+  renderAll();
+}
+
+function renderAll() {
+  renderHeroStats();
+  renderKPIs();
+  renderActiveFilters();
+  renderCharts();
+  renderTopTable();
+  renderAllTable();
+  renderPagination();
+  renderFilterInfo();
+  renderRecommendations();
+}
+
+function renderHeroStats() {
+  if (JOBS.length === 0) {
+    ['heroScore','heroSalaryPremium','heroAvgHigh','heroAvgRest','mini90','mini80','mini70','mini60','miniAvg','miniMed','miniTopSalary'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.textContent = '\u2014';
+    });
+    return;
+  }
+  const avgScore = JOBS.reduce((sum, j) => sum + (j.score || 0), 0) / JOBS.length;
+  const el = document.getElementById('heroScore');
+  if (el) el.innerHTML = Math.round(avgScore) + ' <small>/ 100</small>';
+  const highFit = JOBS.filter(j => j.score >= 90 && j.salary_ars);
+  const rest = JOBS.filter(j => j.score < 90 && j.salary_ars);
+  const avgHigh = highFit.length ? highFit.reduce((s,j) => s + j.salary_ars, 0) / highFit.length : null;
+  const avgRest = rest.length ? rest.reduce((s,j) => s + j.salary_ars, 0) / rest.length : null;
+  const heroAvgHigh = document.getElementById('heroAvgHigh');
+  const heroAvgRest = document.getElementById('heroAvgRest');
+  const heroPremium = document.getElementById('heroSalaryPremium');
+  if (heroAvgHigh) heroAvgHigh.textContent = avgHigh ? formatSalary(avgHigh) + ' ARS' : '\u2014';
+  if (heroAvgRest) heroAvgRest.textContent = avgRest ? formatSalary(avgRest) + ' ARS' : '\u2014';
+  if (heroPremium) {
+    if (avgHigh && avgRest && avgRest > 0) {
+      heroPremium.textContent = '+' + Math.round((avgHigh - avgRest) / avgRest * 100) + '% vs resto';
+    } else { heroPremium.textContent = '\u2014'; }
+  }
+  const b90 = JOBS.filter(j => j.score >= 90).length;
+  const b80 = JOBS.filter(j => j.score >= 80 && j.score < 90).length;
+  const b70 = JOBS.filter(j => j.score >= 70 && j.score < 80).length;
+  const b60 = JOBS.filter(j => j.score >= 60 && j.score < 70).length;
+  const m90 = document.getElementById('mini90'); if (m90) m90.textContent = b90;
+  const m80 = document.getElementById('mini80'); if (m80) m80.textContent = b80;
+  const m70 = document.getElementById('mini70'); if (m70) m70.textContent = b70;
+  const m60 = document.getElementById('mini60'); if (m60) m60.textContent = b60;
+  const arsJobs = JOBS.filter(j => j.salary_ars).sort((a,b) => a.salary_ars - b.salary_ars);
+  if (arsJobs.length > 0) {
+    const avg = arsJobs.reduce((s,j) => s + j.salary_ars, 0) / arsJobs.length;
+    const median = arsJobs[Math.floor(arsJobs.length / 2)].salary_ars;
+    const top = arsJobs[arsJobs.length - 1].salary_ars;
+    const mAvg = document.getElementById('miniAvg'); if (mAvg) mAvg.textContent = formatSalary(avg) + ' ARS';
+    const mMed = document.getElementById('miniMed'); if (mMed) mMed.textContent = formatSalary(median) + ' ARS';
+    const mTop = document.getElementById('miniTopSalary'); if (mTop) mTop.textContent = formatSalary(top) + ' ARS';
+  }
+  const ds = document.getElementById('dataSource');
+  if (ds) ds.textContent = sheetLastSync ? 'Google Sheet' : 'Demo data';
+  const heroRemote = document.getElementById('heroRemotePct');
+  if (heroRemote) {
+    const remotePct = JOBS.filter(j => j.modalidad === 'Remote').length / JOBS.length * 100;
+    heroRemote.textContent = Math.round(remotePct) + '% Remote';
+  }
+}
+
+function renderKPIs() {
+  const kpiTotal = document.getElementById('kpiTotal'); if (kpiTotal) kpiTotal.textContent = JOBS.length;
+  const kpiTop = document.getElementById('kpiTop'); if (kpiTop) kpiTop.textContent = JOBS.filter(j => j.score >= 90).length;
+  const kpiMid = document.getElementById('kpiMid'); if (kpiMid) kpiMid.textContent = JOBS.filter(j => j.score >= 70 && j.score < 90).length;
+  const kpiRemote = document.getElementById('kpiRemote'); if (kpiRemote) kpiRemote.textContent = JOBS.filter(j => j.modalidad === 'Remote').length;
+  const kpiAR = document.getElementById('kpiAR');
+  if (kpiAR) {
+    const arCount = JOBS.filter(j => { const l = (j.ubicacion || '').toLowerCase(); return l.includes('argentina') || l.includes('buenos aires') || l.includes('rosario') || l.includes('c\u00f3rdoba') || l.includes('cordoba'); }).length;
+    kpiAR.textContent = arCount;
+  }
+  const kpiRemoteSub = document.getElementById('kpiRemoteSub');
+  if (kpiRemoteSub) {
+    const pct = JOBS.length ? Math.round(JOBS.filter(j => j.modalidad === 'Remote').length / JOBS.length * 100) : 0;
+    kpiRemoteSub.textContent = pct + '% \u00b7 LATAM-friendly';
+  }
+}
+
+// ============================================================
+// RENDERING — Tables
+// ============================================================
+
+function renderTopTable() {
+  const tbody = document.getElementById('topTable');
+  const countEl = document.getElementById('topCount');
+  if (!tbody) return;
+  const topJobs = filteredJobs.filter(j => j.score >= 90).sort((a, b) => {
+    const dir = sortStateTop.asc ? 1 : -1;
+    let av = a[sortStateTop.field], bv = b[sortStateTop.field];
+    if (av == null) av = 0; if (bv == null) bv = 0;
+    if (typeof av === 'string') return dir * av.localeCompare(bv);
+    return dir * (av - bv);
+  }).slice(0, 50);
+  if (countEl) countEl.textContent = '(' + topJobs.length + ')';
+  tbody.innerHTML = topJobs.map((j, i) => '<tr><td>' + (i+1) + '</td><td><span class="badge-score ' + getScoreClass(j.score) + '">' + Math.round(j.score) + '</span></td><td>' + escapeHtml(j.titulo) + '</td><td>' + escapeHtml(j.empresa) + '</td><td>' + escapeHtml(j.ubicacion) + '</td><td class="salary">' + (j.salary_display || (j.salary_ars ? formatSalary(j.salary_ars) + ' ARS' : '\u2014')) + '</td><td>' + (j.url ? '<a href="' + escapeHtml(j.url) + '" target="_blank">\u2197</a>' : '\u2014') + '</td></tr>').join('');
+}
+
+function renderAllTable() {
+  const tbody = document.getElementById('allTable');
+  const countEl = document.getElementById('totalCount');
+  if (!tbody) return;
+  const sorted = [...filteredJobs].sort((a, b) => {
+    const dir = sortStateAll.asc ? 1 : -1;
+    let av = a[sortStateAll.field], bv = b[sortStateAll.field];
+    if (av == null) av = 0; if (bv == null) bv = 0;
+    if (typeof av === 'string') return dir * av.localeCompare(bv);
+    return dir * (av - bv);
+  });
+  const totalPages = Math.ceil(sorted.length / PAGE_SIZE) || 1;
+  if (currentPage > totalPages) currentPage = totalPages;
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const pageJobs = sorted.slice(start, start + PAGE_SIZE);
+  if (countEl) countEl.textContent = '(' + filteredJobs.length + ')';
+  tbody.innerHTML = pageJobs.map((j, i) => '<tr><td>' + (start + i + 1) + '</td><td><span class="badge-score ' + getScoreClass(j.score) + '">' + Math.round(j.score) + '</span></td><td>' + escapeHtml(j.titulo) + '</td><td>' + escapeHtml(j.empresa) + '</td><td>' + escapeHtml(j.ubicacion) + '</td><td class="salary">' + (j.salary_display || (j.salary_ars ? formatSalary(j.salary_ars) + ' ARS' : '\u2014')) + '</td><td>' + (j.url ? '<a href="' + escapeHtml(j.url) + '" target="_blank">\u2197</a>' : '\u2014') + '</td></tr>').join('');
+  const pageInfo = document.getElementById('pageInfo');
+  if (pageInfo) pageInfo.textContent = 'P\u00e1g ' + currentPage + '/' + totalPages;
+}
+
+function renderPagination() {
+  const pag = document.getElementById('pagination');
+  if (!pag) return;
+  const totalPages = Math.ceil(filteredJobs.length / PAGE_SIZE) || 1;
+  if (totalPages <= 1) { pag.innerHTML = ''; return; }
+  let html = '<button ' + (currentPage === 1 ? 'disabled' : '') + ' onclick="goToPage(' + (currentPage-1) + ')">\u2190</button>';
+  let startPage = Math.max(1, currentPage - 3);
+  let endPage = Math.min(totalPages, currentPage + 3);
+  if (startPage > 1) html += '<button onclick="goToPage(1)">1</button><span style="color:var(--muted)">...</span>';
+  for (let i = startPage; i <= endPage; i++) html += '<button class="' + (i === currentPage ? 'active' : '') + '" onclick="goToPage(' + i + ')">' + i + '</button>';
+  if (endPage < totalPages) html += '<span style="color:var(--muted)">...</span><button onclick="goToPage(' + totalPages + ')">' + totalPages + '</button>';
+  html += '<button ' + (currentPage === totalPages ? 'disabled' : '') + ' onclick="goToPage(' + (currentPage+1) + ')">\u2192</button>';
+  pag.innerHTML = html;
+}
+
+function goToPage(page) {
+  const totalPages = Math.ceil(filteredJobs.length / PAGE_SIZE) || 1;
+  if (page < 1 || page > totalPages) return;
+  currentPage = page;
+  renderAllTable();
+  renderPagination();
+}
+
+function renderFilterInfo() {
+  const el = document.getElementById('filterInfo');
+  if (el) el.textContent = 'Mostrando ' + filteredJobs.length + ' de ' + JOBS.length;
+}
+
+// ============================================================
+// RENDERING — Charts (Chart.js)
+// ============================================================
+
+function renderCharts() {
+  renderScoreChart();
+  renderSalaryChart();
+  renderSkillsChart();
+  renderCompanyChart();
+  renderModalityChart();
+  renderLocationChart();
+  renderRadarChart();
+  renderGapChart();
+  renderInsights();
+}
+
+function renderScoreChart() {
+  const ctx = document.getElementById('scoreChart');
+  if (!ctx) return;
+  if (charts.score) charts.score.destroy();
+  const buckets = ['0-59','60-69','70-79','80-89','90-100'];
+  const counts = [JOBS.filter(j => j.score < 60).length, JOBS.filter(j => j.score >= 60 && j.score < 70).length, JOBS.filter(j => j.score >= 70 && j.score < 80).length, JOBS.filter(j => j.score >= 80 && j.score < 90).length, JOBS.filter(j => j.score >= 90).length];
+  charts.score = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: buckets, datasets: [{ data: counts, backgroundColor: ['#ef4444','#f59e0b','#3b82f6','#22c55e','#8b5cf6'], borderRadius: 6 }] },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => c.raw + ' ofertas' } } },
+      scales: { y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }, x: { grid: { display: false }, ticks: { color: '#94a3b8' } } },
+      onClick: (e, elements) => { if (elements.length > 0) applyFilter('chart', 'score:' + buckets[elements[0].index]); }
+    }
+  });
+}
+
+function renderSalaryChart() {
+  const ctx = document.getElementById('salaryChart');
+  if (!ctx) return;
+  if (charts.salary) charts.salary.destroy();
+  const buckets = ['0-59','60-69','70-79','80-89','90-100'];
+  const avgs = buckets.map(b => {
+    const [min, max] = b.split('-').map(Number);
+    const jobs = JOBS.filter(j => j.score >= min && j.score <= max && j.salary_ars);
+    return jobs.length ? Math.round(jobs.reduce((s,j) => s + j.salary_ars, 0) / jobs.length) : 0;
+  });
+  charts.salary = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: buckets, datasets: [{ label: 'Salario promedio', data: avgs, backgroundColor: '#06b6d4', borderRadius: 6 }] },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => formatSalary(c.raw) + ' ARS/mes' } } },
+      scales: { y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', callback: v => formatSalary(v) } }, x: { grid: { display: false }, ticks: { color: '#94a3b8' } } },
+      onClick: (e, elements) => { if (elements.length > 0) applyFilter('chart', 'score:' + buckets[elements[0].index]); }
+    }
+  });
+}
+
+function renderSkillsChart() {
+  const ctx = document.getElementById('skillsChart');
+  if (!ctx) return;
+  if (charts.skills) charts.skills.destroy();
+  const skillCounts = {};
+  JOBS.forEach(j => (j.skills || []).forEach(s => { skillCounts[s] = (skillCounts[s] || 0) + 1; }));
+  const sorted = Object.entries(skillCounts).sort((a,b) => b[1] - a[1]).slice(0, 10);
+  charts.skills = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: sorted.map(s => s[0]), datasets: [{ label: 'Demanda', data: sorted.map(s => s[1]), backgroundColor: '#f472b6', borderRadius: 6 }] },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => c.raw + ' ofertas' } } },
+      scales: { x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }, y: { grid: { display: false }, ticks: { color: '#94a3b8' } } },
+      onClick: (e, elements) => { if (elements.length > 0) applyFilter('chart', 'skill:' + sorted[elements[0].index][0]); }
+    }
+  });
+}
+
+function renderCompanyChart() {
+  const ctx = document.getElementById('companyChart');
+  if (!ctx) return;
+  if (charts.company) charts.company.destroy();
+  const compCounts = {};
+  JOBS.forEach(j => { const c = j.empresa || 'Sin empresa'; compCounts[c] = (compCounts[c] || 0) + 1; });
+  const sorted = Object.entries(compCounts).sort((a,b) => b[1] - a[1]).slice(0, 10);
+  charts.company = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: sorted.map(c => c[0].substring(0, 20)), datasets: [{ label: 'Vacantes', data: sorted.map(c => c[1]), backgroundColor: '#22c55e', borderRadius: 6 }] },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => c.raw + ' ofertas' } } },
+      scales: { x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }, y: { grid: { display: false }, ticks: { color: '#94a3b8' } } },
+      onClick: (e, elements) => { if (elements.length > 0) applyFilter('chart', 'company:' + sorted[elements[0].index][0]); }
+    }
+  });
+}
+
+function renderModalityChart() {
+  const ctx = document.getElementById('modalityChart');
+  if (!ctx) return;
+  if (charts.modality) charts.modality.destroy();
+  const counts = { 'Remote': JOBS.filter(j => j.modalidad === 'Remote').length, 'Hybrid': JOBS.filter(j => j.modalidad === 'Hybrid').length, 'On-site': JOBS.filter(j => j.modalidad === 'On-site').length };
+  charts.modality = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels: Object.keys(counts), datasets: [{ data: Object.values(counts), backgroundColor: ['#3b82f6','#f59e0b','#ef4444'], borderWidth: 0 }] },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { color: '#e2e8f0', padding: 12 } },
+        tooltip: { callbacks: { label: (c) => c.label + ': ' + c.raw + ' (' + Math.round(c.raw/JOBS.length*100) + '%)' } }
+      },
+      onClick: (e, elements) => { if (elements.length > 0) applyFilter('chart', 'mod:' + Object.keys(counts)[elements[0].index]); }
+    }
+  });
+}
+function renderLocationChart() {
+  const ctx = document.getElementById('locationChart');
+  if (!ctx) return;
+  if (charts.location) charts.location.destroy();
+  const locCounts = {};
+  JOBS.forEach(j => { const l = j.ubicacion || 'N/A'; locCounts[l] = (locCounts[l] || 0) + 1; });
+  const sorted = Object.entries(locCounts).sort((a,b) => b[1] - a[1]).slice(0, 10);
+  charts.location = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: sorted.map(l => l[0].substring(0, 18)), datasets: [{ data: sorted.map(l => l[1]), backgroundColor: '#8b5cf6', borderRadius: 6 }] },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => c.raw + ' ofertas' } } },
+      scales: { x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }, y: { grid: { display: false }, ticks: { color: '#94a3b8' } } },
+      onClick: (e, elements) => { if (elements.length > 0) applyFilter('chart', 'location:' + sorted[elements[0].index][0]); }
+    }
+  });
+}
+
+function renderRadarChart() {
+  const ctx = document.getElementById('radarChart');
+  if (!ctx) return;
+  if (charts.radar) charts.radar.destroy();
+  if (!userProfile || !userProfile.skills || userProfile.skills.size === 0) {
+    charts.radar = new Chart(ctx, {
+      type: 'radar',
+      data: { labels: ['Carg\u00e1 tu CV', 'para ver', 'tu perfil', 'vs mercado'], datasets: [{ label: 'Tu perfil', data: [0,0,0,0], backgroundColor: 'rgba(244,114,182,0.2)', borderColor: '#f472b6', pointBackgroundColor: '#f472b6' }] },
+      options: { responsive: true, plugins: { legend: { labels: { color: '#e2e8f0' } } }, scales: { r: { grid: { color: '#1e293b' }, angleLines: { color: '#1e293b' }, pointLabels: { color: '#94a3b8' }, ticks: { display: false } } } }
+    });
+    return;
+  }
+  const topSkills = [...userProfile.skills].slice(0, 8);
+  const marketData = topSkills.map(skill => JOBS.filter(j => (j.skills || []).includes(skill)).length);
+  charts.radar = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: topSkills,
+      datasets: [
+        { label: 'Tu perfil', data: topSkills.map(() => 10), backgroundColor: 'rgba(244,114,182,0.2)', borderColor: '#f472b6', pointBackgroundColor: '#f472b6' },
+        { label: 'Mercado', data: marketData, backgroundColor: 'rgba(59,130,246,0.2)', borderColor: '#3b82f6', pointBackgroundColor: '#3b82f6' }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { labels: { color: '#e2e8f0' } } },
+      scales: { r: { grid: { color: '#1e293b' }, angleLines: { color: '#1e293b' }, pointLabels: { color: '#94a3b8' }, ticks: { display: false } } },
+      onClick: (e, elements) => { if (elements.length > 0) applyFilter('chart', 'skill:' + topSkills[elements[0].index]); }
+    }
+  });
+}
+
+function renderGapChart() {
+  const ctx = document.getElementById('gapChart');
+  if (!ctx) return;
+  if (charts.gap) charts.gap.destroy();
+  if (!userProfile || !userProfile.skills || userProfile.skills.size === 0) {
+    charts.gap = new Chart(ctx, {
+      type: 'bar',
+      data: { labels: ['Carg\u00e1 tu CV'], datasets: [{ data: [0], backgroundColor: '#64748b', borderRadius: 6 }] },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }, x: { grid: { display: false }, ticks: { color: '#94a3b8' } } } }
+    });
+    return;
+  }
+  const skillCounts = {};
+  JOBS.forEach(j => (j.skills || []).forEach(s => { if (!userProfile.skills.has(s)) skillCounts[s] = (skillCounts[s] || 0) + 1; }));
+  const sorted = Object.entries(skillCounts).sort((a,b) => b[1] - a[1]).slice(0, 10);
+  charts.gap = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: sorted.map(s => s[0]), datasets: [{ label: 'Ofertas', data: sorted.map(s => s[1]), backgroundColor: '#f59e0b', borderRadius: 6 }] },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => c.raw + ' ofertas' } } },
+      scales: { x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }, y: { grid: { display: false }, ticks: { color: '#94a3b8' } } },
+      onClick: (e, elements) => { if (elements.length > 0) applyFilter('chart', 'skill:' + sorted[elements[0].index][0]); }
+    }
+  });
+}
+
+// ============================================================
+// RENDERING — Filters, Chips, Recommendations, Insights
+// ============================================================
+
+function renderSkillFilter() {
+  const sel = document.getElementById('fSkill');
+  if (!sel) return;
+  const current = sel.value;
+  const skills = new Set();
+  JOBS.forEach(j => (j.skills || []).forEach(s => skills.add(s)));
+  const sorted = [...skills].sort();
+  sel.innerHTML = '<option value="">Todas</option>' + sorted.map(s => '<option value="' + escapeHtml(s) + '">' + escapeHtml(s) + '</option>').join('');
+  if (current) sel.value = current;
+}
+
+function renderActiveFilters() {
+  const container = document.getElementById('activeFilters');
+  if (!container) return;
+  const allFilters = [];
+  if (activeFilter) allFilters.push(activeFilter);
+  activeFilters.forEach(f => allFilters.push(f));
+  if (allFilters.length === 0) { container.classList.remove('show'); container.innerHTML = ''; return; }
+  container.classList.add('show');
+  container.innerHTML = allFilters.map(f => {
+    let label = '';
+    if (f.type === 'q') label = 'B\u00fasqueda: ' + f.value;
+    else if (f.type === 'score') label = 'Score \u2265 ' + f.value;
+    else if (f.type === 'mod') label = 'Modalidad: ' + f.value;
+    else if (f.type === 'skill') label = 'Skill: ' + f.value;
+    else if (f.type === 'chart') {
+      const parts = f.value.split(':');
+      if (parts[0] === 'score') label = 'Score: ' + parts[1];
+      else if (parts[0] === 'skill') label = 'Skill: ' + parts.slice(1).join(':');
+      else if (parts[0] === 'mod') label = 'Mod: ' + parts[1];
+      else if (parts[0] === 'company') label = 'Empresa: ' + parts.slice(1).join(':');
+      else if (parts[0] === 'location') label = 'Ubicaci\u00f3n: ' + parts.slice(1).join(':');
+      else label = f.value;
+    }
+    return '<span class="chip">' + escapeHtml(label) + ' <button onclick="removeFilter(\'' + f.type + '\')">\u00d7</button></span>';
+  }).join('');
+}
+
+function renderRecommendations() {
+  const urgentEl = document.getElementById('recUrgent');
+  const importantEl = document.getElementById('recImportant');
+  const goodEl = document.getElementById('recGood');
+  const urgentAction = document.getElementById('recUrgentAction');
+  const importantAction = document.getElementById('recImportantAction');
+  const goodAction = document.getElementById('recGoodAction');
+  
+  if (!userProfile || !userProfile.skills || userProfile.skills.size === 0) {
+    if (urgentEl) urgentEl.innerHTML = '<li style="color:var(--muted)">Carg\u00e1 tu CV para ver recomendaciones</li>';
+    if (importantEl) importantEl.innerHTML = '<li style="color:var(--muted)">Carg\u00e1 tu CV para ver recomendaciones</li>';
+    if (goodEl) goodEl.innerHTML = '<li style="color:var(--muted)">Carg\u00e1 tu CV para ver recomendaciones</li>';
+    if (urgentAction) urgentAction.textContent = 'Sin CV cargado';
+    if (importantAction) importantAction.textContent = 'Sin CV cargado';
+    if (goodAction) goodAction.textContent = 'Sin CV cargado';
+    return;
+  }
+  
+  const total = JOBS.length;
+  const skillFreq = {};
+  JOBS.forEach(j => (j.skills || []).forEach(s => { skillFreq[s] = (skillFreq[s] || 0) + 1; }));
+  
+  // Urgent: skills missing from profile that appear in >20% of jobs
+  const urgentSkills = Object.entries(skillFreq).filter(([s, c]) => !userProfile.skills.has(s) && c / total > 0.2).sort((a,b) => b[1] - a[1]).slice(0, 5);
+  if (urgentEl) urgentEl.innerHTML = urgentSkills.length ? urgentSkills.map(([s,c]) => '<li>' + escapeHtml(s) + ' (' + Math.round(c/total*100) + '% de ofertas)</li>').join('') : '<li style="color:var(--green)">No hay gaps urgentes</li>';
+  if (urgentAction) urgentAction.textContent = urgentSkills.length ? 'Curs\u00e1/certific\u00e1: ' + urgentSkills.slice(0,3).map(s => s[0]).join(', ') : '';
+  
+  // Important: skills in profile but <30% job coverage
+  const importantSkills = [...userProfile.skills].filter(s => (skillFreq[s] || 0) / total < 0.3).slice(0, 5);
+  if (importantEl) importantEl.innerHTML = importantSkills.length ? importantSkills.map(s => '<li>' + escapeHtml(s) + ' (' + Math.round((skillFreq[s]||0)/total*100) + '% cobertura)</li>').join('') : '<li style="color:var(--green)">Tus skills tienen buena cobertura</li>';
+  if (importantAction) importantAction.textContent = importantSkills.length ? 'Profundiz\u00e1: ' + importantSkills.slice(0,3).join(', ') : '';
+  
+  // Good: top 3 skills in profile that match highest-paying jobs
+  const profileSkills = [...userProfile.skills];
+  const skillSalary = profileSkills.map(s => {
+    const jobs = JOBS.filter(j => (j.skills || []).includes(s) && j.salary_ars);
+    const avg = jobs.length ? jobs.reduce((sum,j) => sum + j.salary_ars, 0) / jobs.length : 0;
+    return { skill: s, avg };
+  }).sort((a,b) => b.avg - a.avg).slice(0, 3);
+  if (goodEl) goodEl.innerHTML = skillSalary.length ? skillSalary.map(x => '<li>' + escapeHtml(x.skill) + ' (avg ' + formatSalary(x.avg) + ' ARS)</li>').join('') : '<li style="color:var(--muted)">Sin datos</li>';
+  if (goodAction) goodAction.textContent = skillSalary.length ? 'Aplic\u00e1 a ofertas de: ' + skillSalary.map(x => x.skill).join(', ') : '';
+}
+
+function renderInsights() {
+  // Score insight
+  const scoreInsight = document.getElementById('insight-score');
+  if (scoreInsight && JOBS.length > 0) {
+    const high = JOBS.filter(j => j.score >= 90).length;
+    scoreInsight.innerHTML = '<b>' + Math.round(high/JOBS.length*100) + '%</b> de ofertas son High Fit (\u226590). ' + (userProfile ? (userProfile.skills.has('Python') ? 'Tu perfil incluye skills demandadas.' : 'Carg\u00e1 m\u00e1s skills para mejorar tu score.') : 'Carg\u00e1 tu CV para score personalizado.');
+  }
+  // Salary insight
+  const salaryInsight = document.getElementById('insight-salary');
+  if (salaryInsight && JOBS.length > 0) {
+    const highFit = JOBS.filter(j => j.score >= 90 && j.salary_ars);
+    const avgHigh = highFit.length ? highFit.reduce((s,j) => s + j.salary_ars, 0) / highFit.length : 0;
+    salaryInsight.innerHTML = avgHigh ? 'High Fit paga promedio <b>' + formatSalary(avgHigh) + ' ARS/mes</b>. Aplicar a ofertas \u226590 maximiza retorno.' : 'Sin datos salariales en ofertas High Fit.';
+  }
+  // Skills insight
+  const skillsInsight = document.getElementById('insight-skills');
+  if (skillsInsight && JOBS.length > 0) {
+    const skillCounts = {};
+    JOBS.forEach(j => (j.skills || []).forEach(s => { skillCounts[s] = (skillCounts[s] || 0) + 1; }));
+    const top = Object.entries(skillCounts).sort((a,b) => b[1] - a[1])[0];
+    if (top) {
+      const pct = Math.round(top[1]/JOBS.length*100);
+      const hasIt = userProfile && userProfile.skills.has(top[0]);
+      skillsInsight.innerHTML = '<b>' + pct + '%</b> de ofertas piden <b>' + escapeHtml(top[0]) + '</b>. ' + (hasIt ? 'Tu perfil lo incluye.' : (userProfile ? 'No est\u00e1 en tu perfil.' : 'Carg\u00e1 tu CV para comparar.'));
+    }
+  }
+  // Company insight
+  const companyInsight = document.getElementById('insight-company');
+  if (companyInsight && JOBS.length > 0) {
+    const compCounts = {};
+    JOBS.forEach(j => { const c = j.empresa || 'Sin empresa'; compCounts[c] = (compCounts[c] || 0) + 1; });
+    const top = Object.entries(compCounts).sort((a,b) => b[1] - a[1])[0];
+    if (top) companyInsight.innerHTML = '<b>' + escapeHtml(top[0]) + '</b> lidera con ' + top[1] + ' vacantes. Prioriz\u00e1 esta empresa.';
+  }
+  // Modality insight
+  const modInsight = document.getElementById('insight-modality');
+  if (modInsight && JOBS.length > 0) {
+    const remote = JOBS.filter(j => j.modalidad === 'Remote').length;
+    const pct = Math.round(remote/JOBS.length*100);
+    modInsight.innerHTML = '<b>' + pct + '%</b> es Remote. ' + (pct > 70 ? 'Prioriz\u00e1 Remote para maximizar oportunidades.' : 'Hay variedad de modalidades.');
+  }
+  // Location insight
+  const locInsight = document.getElementById('insight-location');
+  if (locInsight && JOBS.length > 0) {
+    const locCounts = {};
+    JOBS.forEach(j => { const l = j.ubicacion || 'N/A'; locCounts[l] = (locCounts[l] || 0) + 1; });
+    const top = Object.entries(locCounts).sort((a,b) => b[1] - a[1])[0];
+    if (top) locInsight.innerHTML = '<b>' + escapeHtml(top[0]) + '</b> es la ubicaci\u00f3n m\u00e1s com\u00fan (' + top[1] + ' ofertas).';
+  }
+  // Radar insight
+  const radarInsight = document.getElementById('insight-radar');
+  if (radarInsight) {
+    if (userProfile && userProfile.skills.size > 0) {
+      radarInsight.innerHTML = 'Comparando tus <b>' + userProfile.skills.size + '</b> skills vs demanda del mercado. Click en skill para filtrar.';
+    } else {
+      radarInsight.innerHTML = 'Carg\u00e1 tu CV para ver tu perfil vs mercado.';
+    }
+  }
+  // Gap insight
+  const gapInsight = document.getElementById('insight-gap');
+  if (gapInsight) {
+    if (userProfile && userProfile.skills.size > 0) {
+      const skillCounts = {};
+      JOBS.forEach(j => (j.skills || []).forEach(s => { if (!userProfile.skills.has(s)) skillCounts[s] = (skillCounts[s] || 0) + 1; }));
+      const gaps = Object.entries(skillCounts).sort((a,b) => b[1] - a[1]);
+      gapInsight.innerHTML = gaps.length ? '<b>' + gaps.length + '</b> skills demandadas faltan en tu perfil. Top: <b>' + escapeHtml(gaps[0][0]) + '</b> (' + gaps[0][1] + ' ofertas).' : 'Tu perfil cubre todas las skills demandadas.';
+    } else {
+      gapInsight.innerHTML = 'Carg\u00e1 tu CV para identificar skill gaps.';
+    }
+  }
+}
+
+// ============================================================
+// BANNER & TOAST
+// ============================================================
+
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._timeout);
+  el._timeout = setTimeout(() => { el.classList.remove('show'); }, 3000);
+}
+
+function scrollToNewJobs() {
+  const el = document.getElementById('topTable');
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function dismissNewJobsBanner() {
+  const el = document.getElementById('newJobsBanner');
+  if (el) el.classList.remove('show');
+}
+
+function showNewJobsBanner(count) {
+  const banner = document.getElementById('newJobsBanner');
+  const countEl = document.getElementById('newJobsCount');
+  if (countEl) countEl.textContent = count;
+  if (banner) banner.classList.add('show');
+  setTimeout(() => scrollToNewJobs(), 2000);
+}
+
+// ============================================================
+// UTILITIES
+// ============================================================
+
+function formatSalary(ars) {
+  if (!ars && ars !== 0) return '\u2014';
+  const n = Math.round(ars);
+  const s = n.toString();
+  const parts = [];
+  while (s.length > parts.length * 3) {
+    parts.unshift(s.slice(-3));
+    s = s.slice(0, -3);
+  }
+  if (s.length > 0) parts.unshift(s);
+  return '$' + parts.join('.');
+}
+
+function getScoreClass(score) {
+  if (score >= 90) return 's-high';
+  if (score >= 70) return 's-mid';
+  return 's-low';
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function updateLastSync() {
+  const el = document.getElementById('lastUpdate');
+  if (el && sheetLastSync) el.textContent = sheetLastSync.toLocaleString('es-AR');
+}
+
+// ============================================================
+// INITIALIZATION
+// ============================================================
+
+async function init() {
+  loadProfile();
+  const ok = await loadFromJSON();
+  if (!ok) {
+    showToast('Sin datos demo. Peg\u00e1 un Sheet o carg\u00e1 CSV manual.');
+  }
+}
+
+// Run on DOMContentLoaded
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+
+</script>
+
 </body>
 </html>

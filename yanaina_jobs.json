@@ -1,1 +1,74 @@
-[]
+[
+  {
+    "job_id": "ML-MKTG-001",
+    "fecha_scrapeo": "2026-08-31",
+    "titulo": "Marketing Digital Manager",
+    "empresa": "Mercado Libre",
+    "ubicacion": "Buenos Aires, Argentina",
+    "modalidad": "Remote",
+    "url": "https://www.linkedin.com/jobs/view/marketing-digital-manager-at-mercado-libre-4500123456",
+    "notas": "E-commerce platform. Paid media, SEO/SEM, GA4. Team leadership.",
+    "skills": [
+      "Marketing",
+      "Digital Marketing",
+      "SEO/SEM",
+      "Leadership"
+    ],
+    "score": 95,
+    "salary_ars": 2800000,
+    "salary_formatted": "$2.800.000",
+    "salary_currency": "ARS",
+    "salary_display": "$2.800.000 ARS/mes",
+    "salary_ars_equivalent": 2800000,
+    "salary_usd_monthly": null,
+    "salary_notes_usd": false
+  },
+  {
+    "job_id": "GLOBANT-SM-001",
+    "fecha_scrapeo": "2026-08-31",
+    "titulo": "Scrum Master / Agile Coach",
+    "empresa": "Globant",
+    "ubicacion": "Capital Federal, Argentina",
+    "modalidad": "Hybrid",
+    "url": "https://www.globant.com/careers/jobs/scrum-master-12345",
+    "notas": "Tech consultancy. SAFe framework. Cross-functional squads. C2 English.",
+    "skills": [
+      "Scrum Master",
+      "Agile/Scrum",
+      "Leadership",
+      "English"
+    ],
+    "score": 92,
+    "salary_ars": 3250000,
+    "salary_formatted": "USD 2.000",
+    "salary_currency": "USD",
+    "salary_display": "USD 2.000 /mes",
+    "salary_ars_equivalent": 3250000,
+    "salary_usd_monthly": 2000,
+    "salary_notes_usd": false
+  },
+  {
+    "job_id": "CVDSA-DA-001",
+    "fecha_scrapeo": "2026-08-31",
+    "titulo": "Senior Data Analyst",
+    "empresa": "Cablevisión",
+    "ubicacion": "Buenos Aires, Argentina",
+    "modalidad": "On-site",
+    "url": "https://www.linkedin.com/jobs/view/senior-data-analyst-at-cablevision-4500987654",
+    "notas": "Telecom/data. SQL, Python. BI tools (Power BI/Tableau). Customer analytics.",
+    "skills": [
+      "Data Analyst",
+      "SQL",
+      "Analytics",
+      "Python"
+    ],
+    "score": 88,
+    "salary_ars": 2600000,
+    "salary_formatted": "$2.600.000",
+    "salary_currency": "ARS",
+    "salary_display": "$2.600.000 ARS/mes",
+    "salary_ars_equivalent": 2600000,
+    "salary_usd_monthly": null,
+    "salary_notes_usd": false
+  }
+]
